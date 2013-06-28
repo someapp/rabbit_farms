@@ -22,6 +22,8 @@ clean:
 
 console:
 	@erl -sname rabbit_farms -pa ebin \
+	./deps/goldrush/ebin \
+	./deps/lager/ebin \
 	./deps/gen_server2/ebin \
 	./deps/amqp_client ./deps/rabbit_common ./deps/amqp_client/ebin ./deps/rabbit_common/ebin \
 	 -boot start_sasl -s rabbit_farms
@@ -29,6 +31,8 @@ console:
 
 win_console:
 	@erl -sname rabbit_farms -pa ebin \
+	./deps/goldrush/ebin \
+	./deps/lager/ebin \
 	./deps/gen_server2/ebin \
 	./deps/amqp_client ./deps/rabbit_common ./deps/amqp_client/ebin ./deps/rabbit_common/ebin \
 	 -boot start_sasl -s rabbit_farms

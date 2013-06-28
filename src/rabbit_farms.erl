@@ -46,14 +46,10 @@ start_()->
     ok = application:start(?APP).
 
 start()->
-	ok = lager:start(),
     ok = application:start(?APP).
 
 stop()->
-    application:stop(?APP),
-    ok = application:stop(gen_server2),
-    ok = lager:stop(),
-    ok = application:stop(goldrush).
+    application:stop(?APP).
 
 
 start_link() ->
