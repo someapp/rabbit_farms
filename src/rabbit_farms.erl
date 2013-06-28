@@ -28,7 +28,7 @@
 -record(state,{status = uninitialized}).
 
 %% API
--export([start/0, stop/0, start_link/0]).
+-export([start_/0, start/0, stop/0, start_link/0]).
 
 -export([publish/2]).
 -export([native_cast/2, native_cast/3]).
@@ -39,13 +39,21 @@
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
         terminate/2, code_change/3]).
 
+start_()->
+    ok = application:start(goldrush),
+    ok = lager:start(),
+    ok = application:start(gen_server2),
+    ok = application:start(?APP).
+
 start()->
 	ok = lager:start(),
-    application:start(?APP).
+    ok = application:start(?APP).
 
 stop()->
     application:stop(?APP),
-    ok = lager:stop().
+    ok = application:stop(gen_server2),
+    ok = lager:stop(),
+    ok = application:stop(goldrush).
 
 
 start_link() ->
