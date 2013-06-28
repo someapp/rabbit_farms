@@ -40,9 +40,13 @@
         terminate/2, code_change/3]).
 
 start_()->
+    ok = application:start(syntax_tools),
+    ok = application:start(compiler),
     ok = application:start(goldrush),
     ok = lager:start(),
     ok = application:start(gen_server2),
+    ok = application:start(rabbit_common),
+    ok = application:start(amqp_client),
     ok = application:start(?APP).
 
 start()->

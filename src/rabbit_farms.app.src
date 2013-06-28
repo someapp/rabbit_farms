@@ -14,7 +14,8 @@
 %  {env, [{config, "conf/rabbit_farms.config"}]}
   {env, [{rabbit_farms,[default]},
   		   {farm_default,[ {username, <<"guest">>},
-            						 {password, <<"WjNWbGMzUT0=">>},
+         %   						 {password, <<"WjNWbGMzUT0=">>},
+                         {password, <<"V2pOV2JHTXpVVDA9">>},
             						 {virtual_host, <<"/">>},
             						 {host, "192.168.3.202"},
             						 {port, 5672},
