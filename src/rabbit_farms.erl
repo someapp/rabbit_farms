@@ -19,6 +19,7 @@
 
 -include("rabbit_farms.hrl").
 -include("rabbit_farms_internal.hrl").
+-include_lib("lager/include/lager.hrl").
 
 -define(SERVER,?MODULE).
 -define(APP,rabbit_farms).
