@@ -33,7 +33,7 @@
 -export([publish/2]).
 -export([native_cast/2, native_cast/3]).
 -export([native_call/2, native_call/3]).
--export([get_status/0]).
+-export([get_status/0, get_farm_pid/0]).
 
 %% gen_server2 callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
@@ -53,6 +53,9 @@ start_link() ->
 
 get_status()->
     gen_server2:call(?SERVER, {get_status}).
+
+get_farm_pid()->
+	gen_server2:call(?SERVER, {get_farm_pid}).
 
 publish(cast, RabbitCarrot)
 				when is_record(RabbitCarrot,rabbit_carrot)->
@@ -110,6 +113,9 @@ handle_call({native, {FarmName, Method, Content}}, From, State) ->
 	{noreply, State};
 handle_call({get_status}, _From, State)->
 	{reply, {ok, State}, State};
+handle_call({get_farm_pid}, _From, State)->
+    Farms = ets:tab2list(?ETS_FARMS),
+    {reply, {ok, Farms}, State};
 handle_call(_Request, _From, State) ->
     Reply = {error, function_clause},
     {reply, Reply, State}.
@@ -129,7 +135,7 @@ handle_cast({native, {FarmName, Method, Content}}, State) ->
 	{noreply, State};
 handle_cast({on_rabbit_farm_created, RabbitFarmInstance}, State) ->
 	true = ets:insert(?ETS_FARMS, RabbitFarmInstance),
-	error_logger:info_msg("rabbit farm have been working:~n~p~n", [RabbitFarmInstance]),
+	lager:log(info,"rabbit farm have been working:~n~p~n", [RabbitFarmInstance]),
 	{noreply, State};
 handle_cast({on_rabbit_farm_die, _Reason, RabbitFarm}, State) 
 					when is_record(RabbitFarm, rabbit_farm) ->
