@@ -40,10 +40,12 @@
         terminate/2, code_change/3]).
 
 start()->
+	ok = lager:start(),
     application:start(?APP).
 
 stop()->
-    application:stop(?APP).
+    application:stop(?APP),
+    ok = lager:stop().
 
 
 start_link() ->
@@ -215,7 +217,7 @@ create_rabbit_farm_instance(RabbitFarmModel)->
 		false->
 			supervisor:start_child(rabbit_farms_sup,{rabbit_farm_keeper_sup, {rabbit_farm_keeper_sup, start_link, [RabbitFarmModel]}, permanent, 5000, supervisor, [rabbit_farm_keeper_sup]});
 		true->
-			error_logger:error_msg("create rabbit farm keeper failed, farm:~n~p~n",[RabbitFarmModel])
+			lager:log(error,"create rabbit farm keeper failed, farm:~n~p~n",[RabbitFarmModel])
 	end,
 	ok.
 
@@ -266,14 +268,14 @@ call_warper(FarmName, Fun)
 	    				 	Ret          = Fun(Channel),
 							{ok, Ret};
 	    				 false->
-	    				 	error_logger:error_msg("can not find channel from rabbit farm:~p~n",[FarmName])
+	    				 	lager:log(error,"can not find channel from rabbit farm:~p~n",[FarmName])
 	    			end;
 				false->
-					error_logger:error_msg("the farm ~p died~n",[FarmName]),
+					lager:log(error,"the farm ~p died~n",[FarmName]),
 					{error, farm_died}
 			end;
 		 _->
-		 	error_logger:error_msg("can not find rabbit farm:~p~n",[FarmName]),
+		 	lager:log(error,error_logger:error_msg"can not find rabbit farm:~p~n",[FarmName]),
 		 	{error, farm_not_exist}
 	end.
 
