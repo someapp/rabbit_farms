@@ -275,7 +275,7 @@ call_warper(FarmName, Fun)
 					{error, farm_died}
 			end;
 		 _->
-		 	lager:log(error,error_logger:error_msg"can not find rabbit farm:~p~n",[FarmName]),
+		 	lager:log(error,"can not find rabbit farm:~p~n",[FarmName]),
 		 	{error, farm_not_exist}
 	end.
 
