@@ -5,14 +5,17 @@
   {registered, []},
   {applications, [
                   kernel,
-                  stdlib
+                  stdlib,
+                  goldrush,
+                  gen_server2,
+                  lager
                  ]},
   {mod, { rabbit_farms_app, []}},
   {env, [{rabbit_farms,[default]},
   		   {farm_default,[ {username, <<"guest">>},
-            						 {password, <<"V2pOV2JHTXpVVDA9">>},
+            						 {password, <<"WjNWbGMzUT0=">>},
             						 {virtual_host, <<"/">>},
-            						 {host, "localhost"},
+            						 {host, "192.168.3.202"},
             						 {port, 5672},
                          {feeders,[
                                     [{channel_count,1},
