@@ -409,13 +409,6 @@ call_wrapper(FarmName, Fun)
 		 	{error, farm_not_exist}
 	end.
 
-is_closing(Close,Fun)->
-   case Close of
-   		true -> get_close_channel(Channel),
-   				get_close_connection(Connection)
-   		false -> Fun
-   end.
-
 publish_fun(Type, Exchange, RoutingKey, Message, ContentType)->
 	get_fun(Type, 
 			#'basic.publish'{ exchange    = Exchange,
