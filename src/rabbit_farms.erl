@@ -110,7 +110,7 @@ init([]) ->
     erlang:send_after(0, self(), {init}),
     {ok, #state{}}.
 
-handle_call({consume, [M,F,A]}, State) when is_atom(M),
+handle_call({consume, [M,F,A]}, From, State) when is_atom(M),
 							is_function(F),
 						    is_list(A)->
 	Self = self(),
@@ -223,6 +223,7 @@ get_connection_setting(FarmOptions) ->
 				host         = Host,
 				port         = Port
 				}.
+
 get_exchange_setting(FeedOpt)->
 	Ticket       = proplists:get_value(ticket,FeedOpt,0),
 	Exchange     = proplists:get_value(exchange,FeedOpt),
@@ -244,8 +245,6 @@ get_exchange_setting(FeedOpt)->
 				nowait      = NoWait,
 				arguments   = Arguments
 				}.
-
-
 
 get_queue_setting(FeedOpt)->
 	QTicket		 = proplists:get_value(qticket, FeedOpt,0),
@@ -372,8 +371,6 @@ consume_fun(Type, Exchange, RoutingKey)->
 	    					  routing_key = ensure_binary(RoutingKey)},
 	    	#amqp_msg{props = #'P_basic'{content_type = ContentType}, payload = ensure_binary(Message)}).
 
-
-
 callBackReply(Pid) is_pid(Pid) ->
     receive 
     	{ok, Reply} -> {ok, Reply}; 
@@ -381,8 +378,8 @@ callBackReply(Pid) is_pid(Pid) ->
     end.
 
 get_carrot_from_rabbit(From, State) ->
-   
-.
+    
+	ok.
 
 get_fun(cast, Method, Content)->
 	fun(Channel)->
