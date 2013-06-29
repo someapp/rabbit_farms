@@ -398,17 +398,8 @@ publish_fun(Type, Exchange, RoutingKey, Message, ContentType)->
 	    					  routing_key = ensure_binary(RoutingKey)},
 	    	#amqp_msg{props = #'P_basic'{content_type = ContentType}, payload = ensure_binary(Message)}).
 
-subscribe_fun(Type, Exchange, RoutingKey)->
-	get_fun(Type, 
-			#'basic.consume'{ ticket    = Ticket,
-							  queue 	= Queue,
-							  consumer_tag = Consumer_Tag,
-							  no_local	= No_Local,
-							  no_ack	= No_Ack,
-							  exclusive	= Exclusive,
-				
-							  arguments = Arguments
-							},[]).
+subscribe_fun(Type, #'basic.consume'{} = Subscription)->
+	get_fun(Type, Subscription,[]).
 
 callBackReply(Pid) when is_pid(Pid) ->
     try
