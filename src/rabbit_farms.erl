@@ -210,76 +210,90 @@ init_rabbit_farm(State)->
 	  || FarmName <-Farms],
 	{ok, State#state{status = initialized}}.
 
-create_rabbit_farm_model(FarmName, FarmOptions) when is_list(FarmOptions)->
+get_connection_setting(FarmOptions) ->
 	UserName    = proplists:get_value(username,FarmOptions,<<"guest">>),
 	Password    = proplists:get_value(password,FarmOptions,<<"V2pOV2JHTXpVVDA9">>),
 	VirtualHost = proplists:get_value(virtual_host,FarmOptions,<<"/">>),
 	Host        = proplists:get_value(host,FarmOptions,"localhost"),
 	Port        = proplists:get_value(port,FarmOptions,5672),
+	#amqp_params_network{
+				username     = ensure_binary(UserName),
+				password     = Password,
+				virtual_host = ensure_binary(VirtualHost),
+				host         = Host,
+				port         = Port
+				}.
+get_exchange_setting(FeedOpt)->
+	Ticket       = proplists:get_value(ticket,FeedOpt,0),
+	Exchange     = proplists:get_value(exchange,FeedOpt),
+	Type         = proplists:get_value(type,FeedOpt,<<"direct">>),
+	Passive      = proplists:get_value(passive,FeedOpt,false),
+	Durable      = proplists:get_value(durable,FeedOpt,false),
+	AutoDelete   = proplists:get_value(auto_delete,FeedOpt,false),
+	Internal     = proplists:get_value(internal,FeedOpt,false),
+	NoWait       = proplists:get_value(nowait,FeedOpt,false),
+	Arguments    = proplists:get_value(arguments,FeedOpt,[]),
+	#'exchange.declare'{
+				ticket      = Ticket,
+				exchange    = ensure_binary(Exchange),
+				type        = ensure_binary(Type),
+				passive     = Passive,
+				durable     = Durable,
+				auto_delete = AutoDelete,
+				internal    = Internal,
+				nowait      = NoWait,
+				arguments   = Arguments
+				}.
+
+
+
+get_queue_setting(FeedOpt)->
+	QTicket		 = proplists:get_value(qticket, FeedOpt,0),
+	Queue 		 = proplists:get_value(queue, FeedOpt, <<"">>),
+	QPassive	 = proplists:get_value(qpassive, FeedOpt, false),
+	QDurable	 = proplists:get_value(qdurable, FeedOpt, false),
+	QExclusive	 = proplists:get_value(qexclusive, FeedOpt, false),
+	QAutoDelete	 = proplists:get_value(qauto_delete, FeedOpt, false),
+	QNoWait 	 = proplists:get_value(qnowait, FeedOpt, false),
+	QArguments	 = proplists:get_value(qarguments, FeedOpt, []),
+	#'queue.declare'{
+					ticket 		= QTicket,
+					queue 		= Queue,
+					passive     = QPassive,
+					durable     = QDurable,
+					auto_delete = QAutoDelete,
+					exclusive   = QExclusive,
+					nowait      = QNoWait,
+					arguments   = QArguments									
+					}.	
+
+
+create_rabbit_farm_model(FarmName, FarmOptions) when is_list(FarmOptions)->
 	FeedsOpt	= proplists:get_value(feeders,FarmOptions,[]),
-	AmqpParam	= #amqp_params_network{
-						username     = ensure_binary(UserName),
-						password     = Password,
-						virtual_host = ensure_binary(VirtualHost),
-						host         = Host,
-						port         = Port
-						},
+	AmqpParam	= get_connection_setting(FarmOptions),
 	Feeders =
 	[begin 
-		Ticket       = proplists:get_value(ticket,FeedOpt,0),
-		Exchange     = proplists:get_value(exchange,FeedOpt),
-		Type         = proplists:get_value(type,FeedOpt,<<"direct">>),
-		Passive      = proplists:get_value(passive,FeedOpt,false),
-		Durable      = proplists:get_value(durable,FeedOpt,false),
-		AutoDelete   = proplists:get_value(auto_delete,FeedOpt,false),
-		Internal     = proplists:get_value(internal,FeedOpt,false),
-		NoWait       = proplists:get_value(nowait,FeedOpt,false),
-		Arguments    = proplists:get_value(arguments,FeedOpt,[]),
-		ChannelCount = proplists:get_value(channel_count,FeedOpt,[]),
 
-		QTicket		 = proplists:get_value(qticket, FeedOpt,0),
-		Queue 		 = proplists:get_value(queue, FeedOpt, <<"">>),
-		QPassive	 = proplists:get_value(qpassive, FeedOpt, false),
-		QDurable	 = proplists:get_value(qdurable, FeedOpt, false),
-		QExclusive	 = proplists:get_value(qexclusive, FeedOpt, false),
-		QAutoDelete	 = proplists:get_value(qauto_delete, FeedOpt, false),
-		QNoWait 	 = proplists:get_value(qnowait, FeedOpt, false),
-		QArguments	 = proplists:get_value(qarguments, FeedOpt, []),	
-		
+		ChannelCount = proplists:get_value(channel_count,FeedOpt,[]),
+	
 		#rabbit_feeder{ count   = ChannelCount,
-						declare =
-						#'exchange.declare'{
-									ticket      = Ticket,
-									exchange    = ensure_binary(Exchange),
-									type        = ensure_binary(Type),
-									passive     = Passive,
-									durable     = Durable,
-									auto_delete = AutoDelete,
-									internal    = Internal,
-									nowait      = NoWait,
-									arguments   = Arguments
-									},
-						queue_declare = 
-						#'queue.declare'{
-									ticket 		= QTicket,
-									queue 		= Queue,
-									passive     = QPassive,
-									durable     = QDurable,
-									auto_delete = QAutoDelete,
-									exclusive   = QExclusive,
-									nowait      = QNoWait,
-									arguments   = QArguments									
-									}
+						declare = get_exchange_setting(FeedOpt),
+						queue_declare = get_queue_setting(FeedOpt)
 				 	  }
 	end
 	||FeedOpt <- FeedsOpt],
-	#rabbit_farm{farm_name = FarmName, amqp_params = AmqpParam, feeders = Feeders}.
+	#rabbit_farm{farm_name = FarmName, 
+				 amqp_params = AmqpParam, 
+				 feeders = Feeders}.
 
 create_rabbit_farm_instance(RabbitFarmModel)->
 	#rabbit_farm{farm_name = FarmName} = RabbitFarmModel,
 	FarmSups   = supervisor:which_children(rabbit_farms_sup),
 	MatchedSup =
-	[{Id, Child, Type, Modules} ||{Id, Child, Type, Modules} <-FarmSups, Id =:= FarmName], 
+	[{Id, Child, Type, Modules} 
+	  ||{Id, Child, Type, Modules} 
+	    <-FarmSups, Id =:= FarmName], 
+	
 	case length(MatchedSup) > 0 of 
 		false->
 			supervisor:start_child(rabbit_farms_sup,{rabbit_farm_keeper_sup, {rabbit_farm_keeper_sup, start_link, [RabbitFarmModel]}, permanent, 5000, supervisor, [rabbit_farm_keeper_sup]});
