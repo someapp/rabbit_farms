@@ -155,7 +155,7 @@ handle_cast({consume, [M,F,A]}, State) when is_atom(M),
 							is_function(F),
 						    is_list(A)->
     spawn(fun()->
-    			Msg = get_carrot_from_rabbit(),
+    			Msg = get_carrot_from_rabbit(State),
     			apply(M,F,[A,Msg]) 
     	  end),
     {reply, Reply, State};
@@ -377,6 +377,10 @@ callBackReply(Pid) when is_pid(Pid) ->
     	Class:Reason -> {Class, Reason}
     end.
 
+get_carrot_from_rabbit(State) ->
+    
+	ok.
+	
 get_carrot_from_rabbit(From, State) ->
     
 	ok.
