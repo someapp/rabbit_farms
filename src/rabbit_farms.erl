@@ -194,7 +194,7 @@ handle_cast(Info, State) ->
 handle_info({#'basic.deliver'{delivery_tag = Tag, routing_key = _Queue}, 
 			 #amqp_msg{props = #'P_basic'{reply_to = ReplyTo}, payload = Body}} = _Msg, 
 			 #state{channel = Channel} = State) ->
-	amqp_channel:cast(Channel, #'basic.ack'{delivery_tag = Tag}),
+	amqp_channel:cast(Channel, #'basic.ack'{delivery_tag = Tag}).
 
 get_fun(cast, Method, Content)->
 	fun(Channel)->
