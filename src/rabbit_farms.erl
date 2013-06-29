@@ -34,6 +34,7 @@
 -export([native_cast/2, native_cast/3]).
 -export([native_call/2, native_call/3]).
 -export([get_status/0, get_farm_pid/0]).
+-export([consume/2]).
 
 %% gen_server2 callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
@@ -90,6 +91,16 @@ native_call(FarmName, Method)->
 native_call(FarmName, Method, Content)->
 	gen_server2:cast(?SERVER, {native, {FarmName, Method, Content}}).
 
+consume(cast, [M,F,A]) when is_atom(M),
+							is_function(F),
+						    is_list(A)->
+	gen_server2:cast(?SERVER, {consume, [M,F,A]});
+
+consume(call, [M,F,A]) when is_atom(M),
+							is_function(F),
+						    is_list(A)->
+	gen_server2:call(?SERVER, {consume, [M,F,A]}).
+
 
 %%%===================================================================
 %%% gen_server2 callbacks
@@ -98,6 +109,17 @@ native_call(FarmName, Method, Content)->
 init([]) ->
     erlang:send_after(0, self(), {init}),
     {ok, #state{}}.
+
+handle_call({consume, [M,F,A]}, State) when is_atom(M),
+							is_function(F),
+						    is_list(A)->
+	Self = self(),
+    Pid = spawn(fun()->
+    			Msg = get_carrot_from_rabbit(From, State),
+    			Reply = apply(M,F,[A,Msg]),
+    			Self ! {self(), Reply} 
+    	  end),
+    callBackReply(Pid);
 
 handle_call({publish, RabbitCarrot}, From, State)
 					when is_record(RabbitCarrot, rabbit_carrot) ->
@@ -127,6 +149,16 @@ handle_call({get_farm_pid}, _From, State)->
 handle_call(_Request, _From, State) ->
     Reply = {error, function_clause},
     {reply, Reply, State}.
+
+
+handle_cast({consume, [M,F,A]}, State) when is_atom(M),
+							is_function(F),
+						    is_list(A)->
+    spawn(fun()->
+    			Msg = get_carrot_from_rabbit(),
+    			apply(M,F,[A,Msg]) 
+    	  end),
+    {reply, Reply, State};
 
 handle_cast({publish, RabbitCarrot}, State) 
 					when is_record(RabbitCarrot, rabbit_carrot) ->
@@ -204,6 +236,16 @@ create_rabbit_farm_model(FarmName, FarmOptions) when is_list(FarmOptions)->
 		NoWait       = proplists:get_value(nowait,FeedOpt,false),
 		Arguments    = proplists:get_value(arguments,FeedOpt,[]),
 		ChannelCount = proplists:get_value(channel_count,FeedOpt,[]),
+
+		QTicket		 = proplists:get_value(qticket, FeedOpt,0),
+		Queue 		 = proplists:get_value(queue, FeedOpt, <<"">>),
+		QPassive	 = proplists:get_value(qpassive, FeedOpt, false),
+		QDurable	 = proplists:get_value(qdurable, FeedOpt, false),
+		QExclusive	 = proplists:get_value(qexclusive, FeedOpt, false),
+		QAutoDelete	 = proplists:get_value(qauto_delete, FeedOpt, false),
+		QNoWait 	 = proplists:get_value(qnowait, FeedOpt, false),
+		QArguments	 = proplists:get_value(qarguments, FeedOpt, []),	
+		
 		#rabbit_feeder{ count   = ChannelCount,
 						declare =
 						#'exchange.declare'{
@@ -216,6 +258,17 @@ create_rabbit_farm_model(FarmName, FarmOptions) when is_list(FarmOptions)->
 									internal    = Internal,
 									nowait      = NoWait,
 									arguments   = Arguments
+									},
+						queue_declare = 
+						#'queue.declare'{
+									ticket 		= QTicket,
+									queue 		= Queue,
+									passive     = QPassive,
+									durable     = QDurable,
+									auto_delete = QAutoDelete,
+									exclusive   = QExclusive,
+									nowait      = QNoWait,
+									arguments   = QArguments									
 									}
 				 	  }
 	end
@@ -298,6 +351,24 @@ publish_fun(Type, Exchange, RoutingKey, Message, ContentType)->
 			#'basic.publish'{ exchange    = Exchange,
 	    					  routing_key = ensure_binary(RoutingKey)},
 	    	#amqp_msg{props = #'P_basic'{content_type = ContentType}, payload = ensure_binary(Message)}).
+
+consume_fun(Type, Exchange, RoutingKey)->
+	get_fun(Type, 
+			#'basic.publish'{ exchange    = Exchange,
+	    					  routing_key = ensure_binary(RoutingKey)},
+	    	#amqp_msg{props = #'P_basic'{content_type = ContentType}, payload = ensure_binary(Message)}).
+
+
+
+callBackReply(Pid) is_pid(Pid) ->
+    receive 
+    	{ok, Reply} -> {ok, Reply}; 
+    	Class:Reason -> {Class, Reason}
+    end.
+
+get_carrot_from_rabbit(From, State) ->
+   
+.
 
 get_fun(cast, Method, Content)->
 	fun(Channel)->

@@ -1,6 +1,7 @@
 -record(rabbit_carrot,{ farm_name   = default, 
 						exchange    = <<"">>, 
 						routing_key = <<"">>, 
+			
 						message     = <<"">>,
 						content_type}).
 
