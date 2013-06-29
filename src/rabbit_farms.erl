@@ -371,7 +371,7 @@ consume_fun(Type, Exchange, RoutingKey)->
 	    					  routing_key = ensure_binary(RoutingKey)},
 	    	#amqp_msg{props = #'P_basic'{content_type = ContentType}, payload = ensure_binary(Message)}).
 
-callBackReply(Pid) is_pid(Pid) ->
+callBackReply(Pid) when is_pid(Pid) ->
     receive 
     	{ok, Reply} -> {ok, Reply}; 
     	Class:Reason -> {Class, Reason}
