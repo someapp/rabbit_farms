@@ -20,7 +20,7 @@
 
 -include("rabbit_farms.hrl").
 -include("rabbit_farms_internal.hrl").
--include_lib("lager/include/lager.hrl").s
+-include_lib("lager/include/lager.hrl").
 
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3]).
 
@@ -111,7 +111,7 @@ create_rabbit_farm_instance(#rabbit_farm{amqp_params    = AmqpParams,
 												{ok, Channel}           = amqp_connection:open_channel(Connection),
 												{'exchange.declare_ok'} = amqp_channel:call(Channel, Declare),
 												{'queue.declare_ok'}	= amqp_channel:call(Channel, QDeclare),
-												{'queue.bind'} = amqp_channel.:call(Channel, BindQueue),
+												{'queue.bind'} = amqp_channel:call(Channel, BindQueue),
 												Channel
 										    end
 									  	    || _I <-lists:seq(1,ChannelCount)]
@@ -127,8 +127,7 @@ on_rabbit_farm_exception(FarmName, FarmPid, RabbitFarmInstance, Reason)->
 	FarmNodeName = ?TO_FARM_NODE_NAME(FarmName),
 	gen_server2:cast(?RABBIT_FARMS,{on_rabbit_farm_die,Reason,RabbitFarmInstance}),
 	gen_server2:cast(FarmNodeName, {on_rabbit_farm_die,Reason,RabbitFarmInstance}),
-	lager
-	error_logger:error_msg("farm_pid:~n~p~nrabbit_farm:~n~p~nreason:~n~p~n",[FarmPid,RabbitFarmInstance,Reason]).
+	lager:log(error, "farm_pid:~n~p~nrabbit_farm:~n~p~nreason:~n~p~n",[FarmPid,RabbitFarmInstance,Reason]).
 
 watch_rabbit_farm(FarmPid,RabbitFarm,Fun) when   is_pid(FarmPid),
 									 			 is_record(RabbitFarm,rabbit_farm)->
