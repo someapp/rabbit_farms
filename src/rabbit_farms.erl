@@ -196,7 +196,7 @@ handle_info({#'basic.deliver'{delivery_tag = Tag, routing_key = _Queue},
 			 #state{channels = Channel} = State) ->
     try 
     	Message = binary_to_term(Body),
-    	gen_fun(cast, #'basic.ack'{delivery_tag = Tag}, [])
+    	get_fun(cast, #'basic.ack'{delivery_tag = Tag}, [])
 	catch
 		_:_ -> lager:log(error,"Cannot parse message")
 	end,
