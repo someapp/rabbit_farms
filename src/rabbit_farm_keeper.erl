@@ -115,7 +115,7 @@ create_rabbit_farm_instance(#rabbit_farm{amqp_params    = AmqpParams,
 												Channel
 										    end
 									  	    || _I <-lists:seq(1,ChannelCount)]
-									   	  || #rabbit_feeder{count = ChannelCount,declare = Declare, queue_declare = QDeclare} <- Feeders]),
+									   	  || #rabbit_feeder{count = ChannelCount, declare = Declare, queue_declare = QDeclare, queue_bind = BindQueue} <- Feeders]),
 				IndexedChannels =  lists:zip(lists:seq(1,length(ChannelList)),ChannelList),
 				Channels        =  orddict:from_list(IndexedChannels),
 				{ok, Farm#rabbit_farm{connection = Connection, channels = Channels, status = actived}};
