@@ -338,7 +338,7 @@ create_rabbit_farm_instance(RabbitFarmModel)->
 	ok.
 
 consume_carrot_from_rabbit(Message, State)->
-	Cbks = State#rabbit_feeder.callbacks;
+	Cbks = State#rabbit_feeder.callbacks,
 	Ret = lists:map(fun([M,F,Message1])-> erlang:apply(M,F.Message1) end, Cbks),
 	Ret.
 
