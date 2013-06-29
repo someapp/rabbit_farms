@@ -56,7 +56,6 @@ start()->
 stop()->
     application:stop(?APP).
 
-
 start_link() ->
     gen_server2:start_link({local, ?SERVER}, ?MODULE, [], []).
 
@@ -91,6 +90,7 @@ native_call(FarmName, Method)->
 native_call(FarmName, Method, Content)->
 	gen_server2:cast(?SERVER, {native, {FarmName, Method, Content}}).
 
+
 consume(cast, [M,F,A]) when is_atom(M),
 							is_function(F),
 						    is_list(A)->
@@ -101,6 +101,11 @@ consume(call, [M,F,A]) when is_atom(M),
 						    is_list(A)->
 	gen_server2:call(?SERVER, {consume, [M,F,A]}).
 
+subscribe(call, FarmName, Topic)->
+	gen_server2:call(?SERVER, {subscribe, 
+							{farm_name, FarmName},
+							{topic, Topic}
+		}).
 
 %%%===================================================================
 %%% gen_server2 callbacks
@@ -115,7 +120,7 @@ handle_call({consume, [M,F,A]}, From, State) when is_atom(M),
 						    is_list(A)->
 	Self = self(),
     Pid = spawn(fun()->
-    			Msg = get_carrot_from_rabbit(From, State),
+    			Msg = consume_carrot_from_rabbit(call, State),
     			Reply = apply(M,F,[A,Msg]),
     			Self ! {self(), Reply} 
     	  end),
@@ -155,7 +160,7 @@ handle_cast({consume, [M,F,A]}, State) when is_atom(M),
 							is_function(F),
 						    is_list(A)->
     spawn(fun()->
-    			Msg = get_carrot_from_rabbit(State),
+    			Msg = consume_carrot_from_rabbit(cast, State),
     			apply(M,F,[A,Msg]) 
     	  end),
     {reply, Reply, State};
@@ -365,11 +370,18 @@ publish_fun(Type, Exchange, RoutingKey, Message, ContentType)->
 	    					  routing_key = ensure_binary(RoutingKey)},
 	    	#amqp_msg{props = #'P_basic'{content_type = ContentType}, payload = ensure_binary(Message)}).
 
-consume_fun(Type, Exchange, RoutingKey)->
+subscribe_fun(Type, Exchange, RoutingKey)->
 	get_fun(Type, 
-			#'basic.publish'{ exchange    = Exchange,
-	    					  routing_key = ensure_binary(RoutingKey)},
-	    	#amqp_msg{props = #'P_basic'{content_type = ContentType}, payload = ensure_binary(Message)}).
+			#'basic.consume'{ ticket    = Ticket,
+							  queue 	= Queue,
+							  consumer_tag = Consumer_Tag,
+							  no_local	= No_Local,
+							  no_ack	= No_Ack,
+							  exclusive	= Exclusive,
+							  no_wait	= No_Wait,
+							  arguments = Arguments
+							}
+	  	    	).
 
 callBackReply(Pid) when is_pid(Pid) ->
     receive 
@@ -377,11 +389,11 @@ callBackReply(Pid) when is_pid(Pid) ->
     	Class:Reason -> {Class, Reason}
     end.
 
-get_carrot_from_rabbit(State) ->
+consume_carrot_from_rabbit(State) ->
     
 	ok.
 
-get_carrot_from_rabbit(From, State) ->
+consume_carrot_from_rabbit(From, State) ->
     
 	ok.
 
