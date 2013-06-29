@@ -20,6 +20,7 @@
 
 -include("rabbit_farms.hrl").
 -include("rabbit_farms_internal.hrl").
+-include_lib("lager/include/lager.hrl").s
 
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3]).
 
@@ -46,6 +47,7 @@ get_status(FarmName) ->
 
 init([RabbitFarm]) when is_record(RabbitFarm, rabbit_farm)->
     erlang:send_after(0, self(), {init, RabbitFarm}),
+    ok = lager:start(),
     {ok, #state{}}.
 
 handle_call({get_status}, _From, State)->
@@ -107,11 +109,12 @@ create_rabbit_farm_instance(#rabbit_farm{amqp_params    = AmqpParams,
 				ChannelList = lists:flatten( [[ 
 										  	begin 
 												{ok, Channel}           = amqp_connection:open_channel(Connection),
-												{'exchange.declare_ok'} = amqp_channel:call(Channel,Declare),
+												{'exchange.declare_ok'} = amqp_channel:call(Channel, Declare),
+												{'queue.declare_ok'}	= amqp_channel:call(Channel, QDeclare)
 												Channel
 										    end
 									  	    || _I <-lists:seq(1,ChannelCount)]
-									   	  || #rabbit_feeder{count = ChannelCount,declare = Declare} <- Feeders]),
+									   	  || #rabbit_feeder{count = ChannelCount,declare = Declare, queue_declare = QDeclare} <- Feeders]),
 				IndexedChannels =  lists:zip(lists:seq(1,length(ChannelList)),ChannelList),
 				Channels        =  orddict:from_list(IndexedChannels),
 				{ok, Farm#rabbit_farm{connection = Connection, channels = Channels, status = actived}};
@@ -123,6 +126,7 @@ on_rabbit_farm_exception(FarmName, FarmPid, RabbitFarmInstance, Reason)->
 	FarmNodeName = ?TO_FARM_NODE_NAME(FarmName),
 	gen_server2:cast(?RABBIT_FARMS,{on_rabbit_farm_die,Reason,RabbitFarmInstance}),
 	gen_server2:cast(FarmNodeName, {on_rabbit_farm_die,Reason,RabbitFarmInstance}),
+	lager
 	error_logger:error_msg("farm_pid:~n~p~nrabbit_farm:~n~p~nreason:~n~p~n",[FarmPid,RabbitFarmInstance,Reason]).
 
 watch_rabbit_farm(FarmPid,RabbitFarm,Fun) when   is_pid(FarmPid),

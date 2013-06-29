@@ -300,7 +300,11 @@ create_rabbit_farm_instance(RabbitFarmModel)->
 	
 	case length(MatchedSup) > 0 of 
 		false->
-			supervisor:start_child(rabbit_farms_sup,{rabbit_farm_keeper_sup, {rabbit_farm_keeper_sup, start_link, [RabbitFarmModel]}, permanent, 5000, supervisor, [rabbit_farm_keeper_sup]});
+			supervisor:start_child(rabbit_farms_sup,{rabbit_farm_keeper_sup, 
+													{rabbit_farm_keeper_sup, start_link, 
+													[RabbitFarmModel]}, 
+													permanent, 5000, supervisor, 
+													[rabbit_farm_keeper_sup]});
 		true->
 			lager:log(error,"create rabbit farm keeper failed, farm:~n~p~n",[RabbitFarmModel])
 	end,
