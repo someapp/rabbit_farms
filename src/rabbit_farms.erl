@@ -103,10 +103,8 @@ consume(call, [M,F,A], RabbitFarm, RabbitCarrot) when is_atom(M),
 	gen_server2:call(?SERVER, {consume, [M,F,A],
 							   RabbitFarm, RabbitCarrot}).
 
-subscribe(call, FarmName, Topic)->
-	gen_server2:call(?SERVER, {subscribe, 
-							{farm_name, FarmName},
-							{topic, Topic}
+subscribe(call, #'basic_consume'{} = Subscription)->
+	gen_server2:call(?SERVER, {subscribe, Subscription
 		}).
 
 %%%===================================================================
