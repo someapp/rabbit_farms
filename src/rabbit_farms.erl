@@ -90,19 +90,6 @@ native_call(FarmName, Method)->
 native_call(FarmName, Method, Content)->
 	gen_server2:cast(?SERVER, {native, {FarmName, Method, Content}}).
 
-
-consume(cast, [M,F,A], RabbitFarm, RabbitCarrot) when is_atom(M),
-							is_function(F),
-						    is_list(A)->
-	gen_server2:cast(?SERVER, {consume, [M,F,A],
-							  RabbitFarm, RabbitCarrot});
-
-consume(call, [M,F,A], RabbitFarm, RabbitCarrot) when is_atom(M),
-							is_function(F),
-						    is_list(A)->
-	gen_server2:call(?SERVER, {consume, [M,F,A],
-							   RabbitFarm, RabbitCarrot}).
-
 subscribe(call, #'basic_consume'{} = Subscription, [M,F,A])->
 	gen_server2:call(?SERVER, {subscribe, Subscription
 		}).
