@@ -411,8 +411,12 @@ subscribe_fun(Type, Exchange, RoutingKey)->
 							},[]).
 
 callBackReply(Pid) when is_pid(Pid) ->
-    receive 
-    	{ok, Reply} -> {ok, Reply}; 
+    try
+    	receive 
+    		{ok, Reply} -> {ok, Reply}; 
+    		E -> E
+    	end
+    catch 
     	Class:Reason -> {Class, Reason}
     end.
 
