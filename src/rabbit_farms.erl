@@ -34,7 +34,7 @@
 -export([native_cast/2, native_cast/3]).
 -export([native_call/2, native_call/3]).
 -export([get_status/0, get_farm_pid/0]).
--export([consume/4]).
+-export([subscribe/3]).
 
 %% gen_server2 callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
@@ -103,7 +103,7 @@ consume(call, [M,F,A], RabbitFarm, RabbitCarrot) when is_atom(M),
 	gen_server2:call(?SERVER, {consume, [M,F,A],
 							   RabbitFarm, RabbitCarrot}).
 
-subscribe(call, #'basic_consume'{} = Subscription)->
+subscribe(call, #'basic_consume'{} = Subscription, [M,F,A])->
 	gen_server2:call(?SERVER, {subscribe, Subscription
 		}).
 
@@ -115,17 +115,6 @@ init([]) ->
     erlang:send_after(0, self(), {init}),
     {ok, #state{}}.
 
-handle_call({consume, [M,F,A], RabbitFarm, RabbitCarrot}, From, State) when is_atom(M),
-							is_function(F),
-						    is_list(A)->
-	Self = self(),
-    Pid = spawn(fun()->
-    			Msg = consume_carrot_from_rabbit(call, RabbitFarm,
-    				  RabbitCarrot, State),
-    			Reply = apply(M,F,[A,Msg]),
-    			Self ! {self(), Reply} 
-    	  end),
-    callBackReply(Pid);
 
 handle_call({publish, RabbitCarrot}, From, State)
 					when is_record(RabbitCarrot, rabbit_carrot) ->
@@ -156,17 +145,6 @@ handle_call(_Request, _From, State) ->
     Reply = {error, function_clause},
     {reply, Reply, State}.
 
-
-handle_cast({consume, [M,F,A], RabbitFarm, RabbitCarrot}, State) when is_atom(M),
-							is_function(F),
-						    is_list(A)->
-    spawn(fun()->
-    			Msg = consume_carrot_from_rabbit(cast, RabbitFarm,
-    				  RabbitCarrot, State),
-    			apply(M,F,[A,Msg]) 
-    	  end),
-    {noreply, State};
-
 handle_cast({publish, RabbitCarrot}, State) 
 					when is_record(RabbitCarrot, rabbit_carrot) ->
     spawn(fun()-> publish_rabbit_carrot(cast, RabbitCarrot) end),
@@ -193,11 +171,18 @@ handle_cast(Info, State) ->
 	erlang:display(Info),
     {noreply, State}.
 
-handle_info({#'basic.deliver'{delivery_tag = Tag, routing_key = _Queue}, 
-			 #amqp_msg{props = #'P_basic'{reply_to = ReplyTo}, payload = Body}} = _Msg, 
-			 #state{channels = Channel} = State) ->
+handle_info({#'basic.consume_ok'{}, State)->
+	{reply, ok, State};
+
+handle_info({#'basic.cancel_ok'{}, State)->
+	{reply, ok, State};
+
+handle_info({#'basic.deliver'{consumer_tag = Tag},
+			 #amqp_msg{payload = Msg}}, State
+			) ->
     try 
-    	Message = binary_to_term(Body),
+    	Message = binary_to_term(Msg),
+    	Reply = consume_carrot_from_rabbit(Message, State),
     	get_fun(cast, #'basic.ack'{delivery_tag = Tag}, [])
 	catch
 		_:_ -> lager:log(error,"Cannot parse message")
@@ -314,7 +299,7 @@ get_queue_bind(FeedOpt)->
 create_rabbit_farm_model(FarmName, FarmOptions) when is_list(FarmOptions)->
 	FeedsOpt	= proplists:get_value(feeders,FarmOptions,[]),
 	AmqpParam	= get_connection_setting(FarmOptions),
-
+	Callbacks 	= proplists:get_value(callbacks, FarmOptions,[]),
 	Feeders =
 	[begin 
 
@@ -323,7 +308,8 @@ create_rabbit_farm_model(FarmName, FarmOptions) when is_list(FarmOptions)->
 		#rabbit_feeder{ count   = ChannelCount,
 						declare = get_exchange_setting(FeedOpt),
 						queue_declare = get_queue_setting(FeedOpt),
-						queue_bind = get_queue_bind(FeedOpt)
+						queue_bind = get_queue_bind(FeedOpt),
+						callbacks = Callbacks
 				 	  }
 	end
 	||FeedOpt <- FeedsOpt],
@@ -351,6 +337,11 @@ create_rabbit_farm_instance(RabbitFarmModel)->
 	end,
 	ok.
 
+consume_carrot_from_rabbit(Message, State)->
+	Cbks = State#rabbit_feeder.callbacks;
+	lists:map(fun([M,F,Message1])-> erlang:apply(M,F.Message1) end, Cbks),
+	ok.
+
 publish_rabbit_carrot(Type, #rabbit_carrot{
 								 farm_name    = FarmName,
 								 exchange     = Exchange,
@@ -375,7 +366,7 @@ publish_rabbit_carrots(Type, #rabbit_carrots{
 	||#rabbit_carrot_body{routing_key = RoutingKey, message = Message} <- RabbitCarrotBodies],
 	Funs= fun(Channel) ->
 			[F(Channel)||F<-FunList]
-		end,
+		  end,
 	call_wrapper(FarmName, Funs).
 
 native_rabbit_call(Type, FarmName, Method, Content)->
@@ -427,14 +418,6 @@ callBackReply(Pid) when is_pid(Pid) ->
     catch 
     	Class:Reason -> {Class, Reason}
     end.
-
-consume_carrot_from_rabbit(State) ->
-    
-	ok.
-
-consume_carrot_from_rabbit(From, State) ->
-    
-	ok.
 
 get_fun(cast, Method, Content)->
 	fun(Channel)->
