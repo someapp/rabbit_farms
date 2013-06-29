@@ -119,7 +119,7 @@ handle_call({consume, [M,F,A]}, From, State) when is_atom(M),
     			Reply = apply(M,F,[A,Msg]),
     			Self ! {self(), Reply} 
     	  end),
-    callBackReply(Pid);
+    callBackReply(Pid).
 
 handle_call({publish, RabbitCarrot}, From, State)
 					when is_record(RabbitCarrot, rabbit_carrot) ->
