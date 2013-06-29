@@ -171,10 +171,10 @@ handle_cast(Info, State) ->
 	erlang:display(Info),
     {noreply, State}.
 
-handle_info({#'basic.consume_ok'{}, State)->
+handle_info({#'basic.consume_ok'{}}, State)->
 	{reply, ok, State};
 
-handle_info({#'basic.cancel_ok'{}, State)->
+handle_info({#'basic.cancel_ok'{}}, State)->
 	{reply, ok, State};
 
 handle_info({#'basic.deliver'{consumer_tag = Tag},
@@ -206,7 +206,7 @@ terminate(_Reason, _State) ->
 		 	case erlang:is_process_alive(Connection) of 
 		 		true->
 		 			lists:map(fun(C) -> amqp_channel:close(C) end, Channels),
-		 			amqp_connection:close(Connection)
+		 			amqp_connection:close(Connection);
 				false->
 					lager:log(error,"the farm ~p died~n",[FarmName]),
 					{error, farm_died}
