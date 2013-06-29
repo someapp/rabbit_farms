@@ -337,7 +337,7 @@ call_wrapper(FarmName, Fun)
 	case ets:lookup(?ETS_FARMS, FarmName) of 
 		 [RabbitFarm] ->
 		 	#rabbit_farm{connection = Connection, channels = Channels} = RabbitFarm,
-		 	case is_process_alive(Connection) of 
+		 	case erlang:is_process_alive(Connection) of 
 		 		true->
 				 	ChannelSize  = orddict:size(Channels),
 				 	case ChannelSize > 0 of
@@ -380,7 +380,7 @@ callBackReply(Pid) when is_pid(Pid) ->
 get_carrot_from_rabbit(State) ->
     
 	ok.
-	
+
 get_carrot_from_rabbit(From, State) ->
     
 	ok.
