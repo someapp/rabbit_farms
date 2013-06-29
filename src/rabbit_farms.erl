@@ -271,6 +271,13 @@ get_queue_setting(FeedOpt)->
 					arguments   = QArguments									
 					}.	
 
+get_queue_bind(FeedOpt)->
+	#'queue.bind'{
+					queue = Queue,
+					exchange = Exchange,
+					routing_key = RoutingKey
+
+				}.
 
 create_rabbit_farm_model(FarmName, FarmOptions) when is_list(FarmOptions)->
 	FeedsOpt	= proplists:get_value(feeders,FarmOptions,[]),

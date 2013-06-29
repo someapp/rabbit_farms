@@ -110,7 +110,8 @@ create_rabbit_farm_instance(#rabbit_farm{amqp_params    = AmqpParams,
 										  	begin 
 												{ok, Channel}           = amqp_connection:open_channel(Connection),
 												{'exchange.declare_ok'} = amqp_channel:call(Channel, Declare),
-												{'queue.declare_ok'}	= amqp_channel:call(Channel, QDeclare)
+												{'queue.declare_ok'}	= amqp_channel:call(Channel, QDeclare),
+												{'queue.bind'} = amqp_channel.:call(Channel, BindQueue),
 												Channel
 										    end
 									  	    || _I <-lists:seq(1,ChannelCount)]

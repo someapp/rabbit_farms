@@ -9,7 +9,8 @@
 
 -record(rabbit_feeder,{count = 1 , 
 					   declare = #'exchange.declare'{},
-					   queue_declare = #'queue.declare'{}
+					   queue_declare = #'queue.declare'{},
+					   queue_bind = #'queue.bind'{}
 					   }).
 
 -define(TO_FARM_NODE_NAME(V),list_to_atom("farm_" ++ atom_to_list((V)))).
