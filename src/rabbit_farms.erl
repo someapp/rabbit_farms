@@ -408,8 +408,7 @@ subscribe_fun(Type, Exchange, RoutingKey)->
 							  exclusive	= Exclusive,
 							  no_wait	= No_Wait,
 							  arguments = Arguments
-							}
-	  	    	).
+							},[]).
 
 callBackReply(Pid) when is_pid(Pid) ->
     receive 
