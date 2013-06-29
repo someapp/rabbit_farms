@@ -310,7 +310,7 @@ publish_rabbit_carrot(Type, #rabbit_carrot{
 							}  = RabbitCarrot)
 				when is_record(RabbitCarrot,rabbit_carrot)->
 	F = publish_fun(Type, Exchange, RoutingKey, Message, ContentType),
-	call_warper(FarmName, F).
+	call_wrapper(FarmName, F).
 
 publish_rabbit_carrots(Type, #rabbit_carrots{
 								 farm_name            = FarmName,
@@ -326,13 +326,13 @@ publish_rabbit_carrots(Type, #rabbit_carrots{
 	Funs= fun(Channel) ->
 			[F(Channel)||F<-FunList]
 		end,
-	call_warper(FarmName, Funs).
+	call_wrapper(FarmName, Funs).
 
 native_rabbit_call(Type, FarmName, Method, Content)->
 	F = get_fun(Type, Method, Content),
-	call_warper(FarmName, F).
+	call_wrapper(FarmName, F).
 
-call_warper(FarmName, Fun) 
+call_wrapper(FarmName, Fun) 
 					when is_function(Fun,1) ->			
 	case ets:lookup(?ETS_FARMS, FarmName) of 
 		 [RabbitFarm] ->
