@@ -284,9 +284,10 @@ get_queue_setting(FeedOpt)->
 					arguments   = QArguments									
 					}.	
 
-get_queue_bind(FeedOpt, RoutingKey)->
+get_queue_bind(FeedOpt)->
 	Queue 		 = proplists:get_value(queue, FeedOpt, <<"">>),
 	Exchange     = proplists:get_value(exchange,FeedOpt),
+	RoutingKey   = proplists:get_value(routing_key,FeedOpt),
 	#'queue.bind'{
 					queue = Queue,
 					exchange = Exchange,
@@ -297,6 +298,7 @@ get_queue_bind(FeedOpt, RoutingKey)->
 create_rabbit_farm_model(FarmName, FarmOptions) when is_list(FarmOptions)->
 	FeedsOpt	= proplists:get_value(feeders,FarmOptions,[]),
 	AmqpParam	= get_connection_setting(FarmOptions),
+
 	Feeders =
 	[begin 
 
@@ -304,7 +306,8 @@ create_rabbit_farm_model(FarmName, FarmOptions) when is_list(FarmOptions)->
 	
 		#rabbit_feeder{ count   = ChannelCount,
 						declare = get_exchange_setting(FeedOpt),
-						queue_declare = get_queue_setting(FeedOpt)
+						queue_declare = get_queue_setting(FeedOpt),
+						queue_bind = get_queue_bind(FeedOpt)
 				 	  }
 	end
 	||FeedOpt <- FeedsOpt],
