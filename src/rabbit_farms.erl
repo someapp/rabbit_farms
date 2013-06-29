@@ -215,7 +215,23 @@ code_change(_OldVsn, State, _Extra) ->
     {ok, State}.
 
 terminate(_Reason, _State) ->
+	case ets:lookup(?ETS_FARMS, FarmName) of 
+		 [RabbitFarm] ->
+		 	#rabbit_farm{connection = Connection, channels = Channels} = RabbitFarm,
+		 	case erlang:is_process_alive(Connection) of 
+		 		true->
+		 			lists:map(fun(C) -> amqp_channel:close(C) end, Channels),
+		 			amqp_connection:close(Connection)
+				false->
+					lager:log(error,"the farm ~p died~n",[FarmName]),
+					{error, farm_died}
+			end;
+		 _->
+		 	lager:log(error,"can not find rabbit farm:~p~n",[FarmName]),
+		 	{error, farm_not_exist}
+	end, 
     ok.
+
 
 init_rabbit_farm(State)->
 	{ok, Farms} = application:get_env(?APP, rabbit_farms),
@@ -392,6 +408,13 @@ call_wrapper(FarmName, Fun)
 		 	lager:log(error,"can not find rabbit farm:~p~n",[FarmName]),
 		 	{error, farm_not_exist}
 	end.
+
+is_closing(Close,Fun)->
+   case Close of
+   		true -> get_close_channel(Channel),
+   				get_close_connection(Connection)
+   		false -> Fun
+   end.
 
 publish_fun(Type, Exchange, RoutingKey, Message, ContentType)->
 	get_fun(Type, 
