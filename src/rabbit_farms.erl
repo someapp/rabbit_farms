@@ -193,8 +193,14 @@ handle_cast(Info, State) ->
 
 handle_info({#'basic.deliver'{delivery_tag = Tag, routing_key = _Queue}, 
 			 #amqp_msg{props = #'P_basic'{reply_to = ReplyTo}, payload = Body}} = _Msg, 
-			 #state{channel = Channel} = State) ->
-	gen_fun(cast, #'basic.ack'{delivery_tag = Tag}, []).
+			 #state{channels = Channel} = State) ->
+    try 
+    	Message = binary_to_term(Body),
+    	gen_fun(cast, #'basic.ack'{delivery_tag = Tag}, [])
+	catch
+		_:_ -> lager:log(error,"Cannot parse message")
+	end,
+	{noreply, State}.
 
 handle_info({init}, State) ->
 	ets:new(?ETS_FARMS,[protected, named_table, {keypos, #rabbit_farm.farm_name}, {read_concurrency, true}]),
