@@ -163,7 +163,7 @@ handle_cast({consume, [M,F,A]}, State) when is_atom(M),
     			Msg = consume_carrot_from_rabbit(cast, State),
     			apply(M,F,[A,Msg]) 
     	  end),
-    {reply, Reply, State};
+    {noreply, State};
 
 handle_cast({publish, RabbitCarrot}, State) 
 					when is_record(RabbitCarrot, rabbit_carrot) ->
@@ -190,6 +190,27 @@ handle_cast({on_rabbit_farm_die, _Reason, RabbitFarm}, State)
 handle_cast(Info, State) ->
 	erlang:display(Info),
     {noreply, State}.
+
+handle_info({#'basic.deliver'{delivery_tag = Tag, routing_key = _Queue}, 
+			 #amqp_msg{props = #'P_basic'{reply_to = ReplyTo}, payload = Body}} = _Msg, 
+			 #state{channel = Channel} = State) ->
+	amqp_channel:cast(Channel, #'basic.ack'{delivery_tag = Tag}),
+
+get_fun(cast, Method, Content)->
+	fun(Channel)->
+			amqp_channel:cast(Channel, Method, Content)
+	end;
+
+	try
+		Message = binary_to_term(Body)
+		%
+		% Message is your payload
+		%
+	catch
+		_:_ ->
+		error_logger:error_report("Cannot parse message")
+	end,
+	{noreply, State};
 
 handle_info({init}, State) ->
 	ets:new(?ETS_FARMS,[protected, named_table, {keypos, #rabbit_farm.farm_name}, {read_concurrency, true}]),
@@ -252,7 +273,7 @@ get_exchange_setting(FeedOpt)->
 				}.
 
 get_queue_setting(FeedOpt)->
-	QTicket		 = proplists:get_value(qticket, FeedOpt,0),
+	QTicket		 = proplists:get_value(qticket, FeedOpt, 0),
 	Queue 		 = proplists:get_value(queue, FeedOpt, <<"">>),
 	QPassive	 = proplists:get_value(qpassive, FeedOpt, false),
 	QDurable	 = proplists:get_value(qdurable, FeedOpt, false),
