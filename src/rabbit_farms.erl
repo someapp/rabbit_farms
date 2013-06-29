@@ -90,7 +90,7 @@ native_call(FarmName, Method)->
 native_call(FarmName, Method, Content)->
 	gen_server2:cast(?SERVER, {native, {FarmName, Method, Content}}).
 
-subscribe(call, #'basic_consume'{} = Subscription, [M,F,A])->
+subscribe(call, Subscription, [M,F,A]) when is_record(Subscription, #'basic_consume')->
 	gen_server2:call(?SERVER, {subscribe, Subscription
 		}).
 
