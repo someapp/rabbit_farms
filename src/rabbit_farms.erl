@@ -406,7 +406,7 @@ subscribe_fun(Type, Exchange, RoutingKey)->
 							  no_local	= No_Local,
 							  no_ack	= No_Ack,
 							  exclusive	= Exclusive,
-							  no_wait	= No_Wait,
+				
 							  arguments = Arguments
 							},[]).
 
