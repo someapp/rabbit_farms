@@ -34,7 +34,7 @@
 -export([native_cast/2, native_cast/3]).
 -export([native_call/2, native_call/3]).
 -export([get_status/0, get_farm_pid/0]).
--export([consume/2]).
+-export([consume/4]).
 
 %% gen_server2 callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
@@ -91,15 +91,17 @@ native_call(FarmName, Method, Content)->
 	gen_server2:cast(?SERVER, {native, {FarmName, Method, Content}}).
 
 
-consume(cast, [M,F,A]) when is_atom(M),
+consume(cast, [M,F,A], RabbitFarm, RabbitCarrot) when is_atom(M),
 							is_function(F),
 						    is_list(A)->
-	gen_server2:cast(?SERVER, {consume, [M,F,A]});
+	gen_server2:cast(?SERVER, {consume, [M,F,A],
+							  RabbitFarm, RabbitCarrot});
 
-consume(call, [M,F,A]) when is_atom(M),
+consume(call, [M,F,A], RabbitFarm, RabbitCarrot) when is_atom(M),
 							is_function(F),
 						    is_list(A)->
-	gen_server2:call(?SERVER, {consume, [M,F,A]}).
+	gen_server2:call(?SERVER, {consume, [M,F,A],
+							   RabbitFarm, RabbitCarrot}).
 
 subscribe(call, FarmName, Topic)->
 	gen_server2:call(?SERVER, {subscribe, 
@@ -115,12 +117,13 @@ init([]) ->
     erlang:send_after(0, self(), {init}),
     {ok, #state{}}.
 
-handle_call({consume, [M,F,A]}, From, State) when is_atom(M),
+handle_call({consume, [M,F,A], RabbitFarm, RabbitCarrot}, From, State) when is_atom(M),
 							is_function(F),
 						    is_list(A)->
 	Self = self(),
     Pid = spawn(fun()->
-    			Msg = consume_carrot_from_rabbit(call, State),
+    			Msg = consume_carrot_from_rabbit(call, RabbitFarm,
+    				  RabbitCarrot, State),
     			Reply = apply(M,F,[A,Msg]),
     			Self ! {self(), Reply} 
     	  end),
@@ -156,11 +159,12 @@ handle_call(_Request, _From, State) ->
     {reply, Reply, State}.
 
 
-handle_cast({consume, [M,F,A]}, State) when is_atom(M),
+handle_cast({consume, [M,F,A], RabbitFarm, RabbitCarrot}, State) when is_atom(M),
 							is_function(F),
 						    is_list(A)->
     spawn(fun()->
-    			Msg = consume_carrot_from_rabbit(cast, State),
+    			Msg = consume_carrot_from_rabbit(cast, RabbitFarm,
+    				  RabbitCarrot, State),
     			apply(M,F,[A,Msg]) 
     	  end),
     {noreply, State};
