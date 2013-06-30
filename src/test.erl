@@ -1,6 +1,6 @@
 -module(test).
 
--export([test1,test2]).
+-export([test1/1,test2/2]).
 
 
 test1(Message)->
