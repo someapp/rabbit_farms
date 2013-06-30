@@ -110,8 +110,14 @@ create_rabbit_farm_instance(#rabbit_farm{amqp_params    = AmqpParams,
 										  	begin 
 												{ok, Channel}           = amqp_connection:open_channel(Connection),
 												{'exchange.declare_ok'} = amqp_channel:call(Channel, Declare),
-												{'queue.declare_ok'}	= amqp_channel:call(Channel, QDeclare),
-												{'queue.bind'} = amqp_channel:call(Channel, BindQueue),
+												lager:log(info,"qdeclare ~p",[QDeclare]),
+												R	= amqp_channel:call(Channel, QDeclare),
+												{'queue.declare_ok'} = R,
+												lager:log(info,"qdeclare ~p with return ~p",[QDeclare, R]),
+												lager:log(info,"qdeclare ~p",[BindQueue]),
+												R1 = amqp_channel:call(Channel, BindQueue),
+												lager:log(info,"Bindqueue ~p with return ~p",[BindQueue, R1]),
+												{'queue.bind'} =R1,
 												Channel
 										    end
 									  	    || _I <-lists:seq(1,ChannelCount)]
