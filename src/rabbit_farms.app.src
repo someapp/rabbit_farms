@@ -22,6 +22,8 @@
                          {feeders,[
                                     [{channel_count,1},
                                      {exchange, <<"tracking.logs">>},
+                                     {queue, <<"chat">>},
+                                     {routing_key,<<"spark.chat">>},
                                      {type, <<"topic">>}]
                                   ]}
                          ]}
