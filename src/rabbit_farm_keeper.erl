@@ -88,7 +88,7 @@ handle_info(_Info, State) ->
     {noreply, State}.
 
 terminate(_Reason, State) ->
-    Connection = State#rabbit_farm.farm_name.connection,
+    Connection = State#rabbit_farm.connection,
     case erlang:is_process_alive(Connection) of 
 	 	 true->
 		 		orddict:map(fun(C) -> amqp_channel:close(C) end, State#rabbit_farm.channels),
