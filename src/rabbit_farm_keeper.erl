@@ -23,7 +23,7 @@
 -include("rabbit_farms_internal.hrl").
 -include_lib("lager/include/lager.hrl").
 
--export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3]).
+-export([init/1, handle_call/3, handle_cast/2, handle_info/2, handle_info/3, terminate/2, code_change/3]).
 
 -define(RABBIT_FARMS,rabbit_farms).
 -define(SERVER,?MODULE).
@@ -87,6 +87,9 @@ handle_info({init, RabbitFarm}, State) ->
 handle_info(_Info, State) ->
     {noreply, State}.
 
+handle_info(_Info, State, _Extra) ->
+    {noreply, State}.
+
 terminate(_Reason, State) ->
     Connection = State#rabbit_farm.connection,
     case erlang:is_process_alive(Connection) of 
@@ -97,6 +100,7 @@ terminate(_Reason, State) ->
 		 		FarmName = State#rabbit_farm.farm_name,
 				lager:log(error,"the farm ~p: ~p~n",[FarmName, {error, farm_died}])
 	end,
+	amqp_connection:close(Connection),
 	ok.
 
 code_change(_OldVsn, State, _Extra) ->

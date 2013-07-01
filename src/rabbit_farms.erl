@@ -37,7 +37,7 @@
 -export([subscribe/2]).
 
 %% gen_server2 callbacks
--export([init/1, handle_call/3, handle_cast/2, handle_info/2,
+-export([init/1, handle_call/3, handle_cast/2, handle_info/2, handle_info/3,
         terminate/2, code_change/3]).
 
 start_()->
@@ -184,6 +184,9 @@ handle_info({init}, State) ->
 	{ok, NewState} = init_rabbit_farm(State),
     {noreply, NewState};
 handle_info(_Info, State) ->
+    {noreply, State}.
+
+handle_info(_Info, State, _Extra) ->
     {noreply, State}.
 
 code_change(_OldVsn, State, _Extra) ->
