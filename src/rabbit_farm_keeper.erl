@@ -15,8 +15,9 @@
 %% -------------------------------------------------------------------
 
 -module(rabbit_farm_keeper).
-
 -behaviour(gen_server2).
+
+-compile([parse_transform, lager_transform]).
 
 -include("rabbit_farms.hrl").
 -include("rabbit_farms_internal.hrl").
