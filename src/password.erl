@@ -9,7 +9,7 @@ encode_password(Value) ->
 	A1 = base64:encode(A),
 	base64:encode(A1).
 
-decode_base64(Value)->
+decode_password(Value)->
 	B1 = base64:decode(Value),
 	B2 = base64:decode(B1),
 	base64:decode(B2).
