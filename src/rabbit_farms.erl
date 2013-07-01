@@ -48,6 +48,7 @@ start_()->
     ok = application:start(gen_server2),
     ok = application:start(rabbit_common),
     ok = application:start(amqp_client),
+    ok = application:start(crypto),
     ok = application:start(?APP).
 
 start()->
