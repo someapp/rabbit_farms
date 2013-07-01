@@ -32,6 +32,8 @@
 %% ====================================================================
 -export([start_link/1, get_status/1]).
 
+-compile().
+
 start_link(RabbitFarmModel) ->
 	#rabbit_farm{farm_name = FarmName} = RabbitFarmModel,
     gen_server2:start_link({local, ?TO_FARM_NODE_NAME(FarmName)}, ?MODULE, [RabbitFarmModel], []).
@@ -111,13 +113,14 @@ create_rabbit_farm_instance(#rabbit_farm{amqp_params    = AmqpParams,
 												{ok, Channel}           = amqp_connection:open_channel(Connection),
 												{'exchange.declare_ok'} = amqp_channel:call(Channel, Declare),
 												lager:log(info,"qdeclare ~p",[QDeclare]),
-												R	= amqp_channel:call(Channel, QDeclare),
-												%{'queue.declare_ok', QName, _, _} = R,
+												QName = QDeclare#rabbit_feeder.queue,
+												{'queue.declare_ok', QName, _, _}	= amqp_channel:call(Channel, QDeclare),
+												%{'queue.declare_ok', <<>>, _, _} = R,
 												lager:log(info,"qdeclare ~p with return ~p",[QDeclare, R]),
 												lager:log(info,"qdeclare ~p",[BindQueue]),
 												R1 = amqp_channel:call(Channel, BindQueue),
 												lager:log(info,"Bindqueue ~p with return ~p",[BindQueue, R1]),
-												%{'queue.bind', QBind} =R1,
+												{'queue.bind', QBind} =R1,
 												Channel
 										    end
 									  	    || _I <-lists:seq(1,ChannelCount)]
