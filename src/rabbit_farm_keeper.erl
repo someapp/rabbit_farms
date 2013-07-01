@@ -87,8 +87,16 @@ handle_info({init, RabbitFarm}, State) ->
 handle_info(_Info, State) ->
     {noreply, State}.
 
-terminate(_Reason, _State) ->
-    ok.
+terminate(_Reason, State) ->
+    Connection = State#rabbit_farm.farm_name.connection,
+    case erlang:is_process_alive(Connection) of 
+	 	 true->
+		 		orddict:map(fun(C) -> amqp_channel:close(C) end, State#rabbit_farm.channels),
+		 		amqp_connection:close(Connection);
+		 false->
+				lager:log(error,"the farm ~p: ~p~n",[FarmName, {error, farm_died}])
+	end,
+	ok.
 
 code_change(_OldVsn, State, _Extra) ->
     {ok, State}.
