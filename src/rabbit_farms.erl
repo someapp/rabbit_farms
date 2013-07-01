@@ -264,6 +264,8 @@ get_queue_setting(FeedOpt)->
 	QAutoDelete	 = proplists:get_value(qauto_delete, FeedOpt, false),
 	QNoWait 	 = proplists:get_value(qnowait, FeedOpt, false),
 	QArguments	 = proplists:get_value(qarguments, FeedOpt, []),
+
+
 	#'queue.declare'{
 					ticket 		= QTicket,
 					queue 		= Queue,
@@ -293,9 +295,10 @@ create_rabbit_farm_model(FarmName, FarmOptions) when is_list(FarmOptions)->
 	Feeders =
 	[begin 
 
-		ChannelCount = proplists:get_value(channel_count,FeedOpt,[]),
-	
+		ChannelCount = proplists:get_value(channel_count,FeedOpt, 1),
+	    QueueCount	= proplists:get_value(queue_count, FeedOpt, 1),
 		#rabbit_feeder{ count   = ChannelCount,
+					    queue_count = QueueCount,
 						declare = get_exchange_setting(FeedOpt),
 						queue_declare = get_queue_setting(FeedOpt),
 						queue_bind = get_queue_bind(FeedOpt),

@@ -8,6 +8,7 @@
 					  channels     = orddict:new()}).
 
 -record(rabbit_feeder,{count = 1 , 
+					   queue_count = 1,
 					   declare = #'exchange.declare'{},
 					   queue_declare = #'queue.declare'{},
 					   queue_bind = #'queue.bind'{},
