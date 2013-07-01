@@ -34,12 +34,14 @@
 -export([start_link/1, get_status/1]).
 
 start_link(RabbitFarmModel) ->
+	ok = lager:start(),
 	#rabbit_farm{farm_name = FarmName} = RabbitFarmModel,
     gen_server2:start_link({local, ?TO_FARM_NODE_NAME(FarmName)}, ?MODULE, [RabbitFarmModel], []).
 
 get_status(FarmName) ->
 	FarmNode = ?TO_FARM_NODE_NAME(FarmName),
     gen_server2:call(FarmNode,{get_status}).
+
 
 %% ====================================================================
 %% Behavioural functions 
