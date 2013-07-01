@@ -168,12 +168,13 @@ handle_info({#'basic.cancel_ok'{}}, State)->
 handle_info({#'basic.deliver'{consumer_tag = Tag},
 			 #amqp_msg{payload = Msg}}, State
 			) ->
-    try 
+    Reply = try 
     	Message = binary_to_term(Msg),
-    	Reply = consume_carrot_from_rabbit(Message, State),
+    	consume_carrot_from_rabbit(Message, State),
     	get_fun(cast, #'basic.ack'{delivery_tag = Tag}, [])
 	catch
-		_:_ -> lager:log(error,"Cannot parse message")
+		C:R -> lager:log(error,"Cannot parse message"), 
+			   {C, R}
 	end,
 	{reply, Reply, State};
 
@@ -399,7 +400,7 @@ publish_fun(Type, Exchange, RoutingKey, Message, ContentType)->
 
 subscribe_fun(Type, #'basic.consume'{} = Subscription)->
 	get_fun(Type, Subscription,[]).
-	
+
 %
 %callBackReply(Pid) when is_pid(Pid) ->
 %    try
