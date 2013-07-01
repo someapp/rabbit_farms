@@ -32,8 +32,6 @@
 %% ====================================================================
 -export([start_link/1, get_status/1]).
 
--compile().
-
 start_link(RabbitFarmModel) ->
 	#rabbit_farm{farm_name = FarmName} = RabbitFarmModel,
     gen_server2:start_link({local, ?TO_FARM_NODE_NAME(FarmName)}, ?MODULE, [RabbitFarmModel], []).
