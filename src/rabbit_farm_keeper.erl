@@ -94,6 +94,7 @@ terminate(_Reason, State) ->
 		 		orddict:map(fun(C) -> amqp_channel:close(C) end, State#rabbit_farm.channels),
 		 		amqp_connection:close(Connection);
 		 false->
+		 		FarmName = State#rabbit_farm.farm_name,
 				lager:log(error,"the farm ~p: ~p~n",[FarmName, {error, farm_died}])
 	end,
 	ok.
