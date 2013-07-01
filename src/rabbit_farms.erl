@@ -221,6 +221,7 @@ init_rabbit_farm(State)->
 get_connection_setting(FarmOptions) ->
 	UserName    = proplists:get_value(username,FarmOptions,<<"guest">>),
 	Password    = proplists:get_value(password,FarmOptions,<<"V2pOV2JHTXpVVDA9">>),
+	true = password:is_secure(Password),
 	VirtualHost = proplists:get_value(virtual_host,FarmOptions,<<"/">>),
 	Host        = proplists:get_value(host,FarmOptions,"localhost"),
 	Port        = proplists:get_value(port,FarmOptions,5672),
