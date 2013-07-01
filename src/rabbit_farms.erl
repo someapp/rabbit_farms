@@ -175,7 +175,7 @@ handle_info({#'basic.deliver'{consumer_tag = Tag},
 	catch
 		_:_ -> lager:log(error,"Cannot parse message")
 	end,
-	{reply, Replye, State};
+	{reply, Reply, State};
 
 handle_info({init}, State) ->
 	ets:new(?ETS_FARMS,[protected, named_table, {keypos, #rabbit_farm.farm_name}, {read_concurrency, true}]),
@@ -399,16 +399,17 @@ publish_fun(Type, Exchange, RoutingKey, Message, ContentType)->
 
 subscribe_fun(Type, #'basic.consume'{} = Subscription)->
 	get_fun(Type, Subscription,[]).
-
-callBackReply(Pid) when is_pid(Pid) ->
-    try
-    	receive 
-    		{ok, Reply} -> {ok, Reply}; 
-    		E -> E
-    	end
-    catch 
-    	Class:Reason -> {Class, Reason}
-    end.
+	
+%
+%callBackReply(Pid) when is_pid(Pid) ->
+%    try
+%    	receive 
+%    		{ok, Reply} -> {ok, Reply}; 
+%    		E -> E
+%    	end
+%    catch 
+%    	Class:Reason -> {Class, Reason}
+%    end.
 
 get_fun(cast, Method, Content)->
 	fun(Channel)->
