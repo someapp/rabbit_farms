@@ -34,7 +34,7 @@
 -export([native_cast/2, native_cast/3]).
 -export([native_call/2, native_call/3]).
 -export([get_status/0, get_farm_pid/0]).
--export([subscribe/3]).
+-export([subscribe/2]).
 
 %% gen_server2 callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2,
@@ -90,7 +90,7 @@ native_call(FarmName, Method)->
 native_call(FarmName, Method, Content)->
 	gen_server2:cast(?SERVER, {native, {FarmName, Method, Content}}).
 
-subscribe(call, Subscription, [M,F,A]) 
+subscribe(call, Subscription) 
 			when is_record(Subscription, 'basic.consume') ->
 	gen_server2:call(?SERVER, {subscribe, Subscription
 		}).
@@ -175,7 +175,7 @@ handle_info({#'basic.deliver'{consumer_tag = Tag},
 	catch
 		_:_ -> lager:log(error,"Cannot parse message")
 	end,
-	{noreply, State};
+	{reply, Replye, State};
 
 handle_info({init}, State) ->
 	ets:new(?ETS_FARMS,[protected, named_table, {keypos, #rabbit_farm.farm_name}, {read_concurrency, true}]),
@@ -197,12 +197,10 @@ terminate(_Reason, State) ->
 		 			lists:map(fun(C) -> amqp_channel:close(C) end, Channels),
 		 			amqp_connection:close(Connection);
 				false->
-					lager:log(error,"the farm ~p died~n",[FarmName]),
-					{error, farm_died}
+					lager:log(error,"the farm ~p: ~p~n",[FarmName, {error, farm_died}])
 			end;
 		 _->
-		 	lager:log(error,"can not find rabbit farm:~p~n",[FarmName]),
-		 	{error, farm_not_exist}
+		 	lager:log(error,"~p: ~p~n",[FarmName,{error, farm_not_exist}])
 	end, 
     ok.
 
