@@ -98,7 +98,7 @@ create_rabbit_farm_instance(#rabbit_farm{amqp_params    = AmqpParams,
 		 		  		   				 farm_name      = FarmName} = Farm) 
 								when is_record(Farm,rabbit_farm)->
 	SecPassword	 	 = AmqpParams#amqp_params_network.password,
-	DecodedAmqpParms = AmqpParams#amqp_params_network{password = password:decode_base64(SecPassword)},
+	DecodedAmqpParms = AmqpParams#amqp_params_network{password = password:decode_password(SecPassword)},
 	case amqp_connection:start(DecodedAmqpParms) of
 		{ok, Connection}->
 				watch_rabbit_farm( Connection, 
