@@ -34,7 +34,7 @@
 -export([native_cast/2, native_cast/3]).
 -export([native_call/2, native_call/3]).
 -export([get_status/0, get_farm_pid/0]).
--export([subscribe/2]).
+-export([subscribe/3]).
 
 %% gen_server2 callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, handle_info/3,
@@ -91,9 +91,9 @@ native_call(FarmName, Method)->
 native_call(FarmName, Method, Content)->
 	gen_server2:cast(?SERVER, {native, {FarmName, Method, Content}}).
 
-subscribe(call, Subscription) 
+subscribe(call, Subscription, [M, F, A]) 
 			when is_record(Subscription, 'basic.consume') ->
-	gen_server2:call(?SERVER, {subscribe, Subscription
+	gen_server2:call(?SERVER, {subscribe, Subscription, [M, F, A]
 		}).
 
 %%%===================================================================
@@ -119,6 +119,15 @@ handle_call({publish, RabbitCarrots}, From, State)
     		 gen_server2:reply(From, Reply)
     	 end),
     {noreply, State};
+
+handle_cast({subscribe, #'base.consume'{} = Subscription, [M,F,A]}, State) 
+					when is_record(Subscription, 'basic.consume') 
+						 is_atom(M)->
+    spawn(fun()-> 
+     		 subscribe_with_callback(call, Subscription, [M,F,A])
+    	 end),
+    {noreply, State};
+
 handle_call({native, {FarmName, Method, Content}}, From, State) ->
 	spawn(fun()-> 
 				Reply = native_rabbit_call(call, FarmName, Method, Content),
@@ -365,6 +374,18 @@ publish_rabbit_carrots(Type, #rabbit_carrots{
 		  end,
 	call_wrapper(FarmName, Funs).
 
+subscribe_with_callback(Type, #'basic.consume' {
+									ticket = Ticket,
+									queue = Queue,
+									consumer_tag = Exchange,
+									no_local = NoLocal,
+									no_ack	= NoAck,
+									exclusive = Exclusive,
+									no_wait = NoWait,
+									arguments = Arguments
+							  } = Subscription,[M,F,A]) ->
+    
+	.
 native_rabbit_call(Type, FarmName, Method, Content)->
 	F = get_fun(Type, Method, Content),
 	call_wrapper(FarmName, F).
