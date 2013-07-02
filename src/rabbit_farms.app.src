@@ -21,7 +21,7 @@
             						 {port, 5672},
                          {feeders,[
                                     [{channel_count,5},
-                                     {exchange, <<"tracking.logs">>},
+                                     {exchange, <<"im.conversation">>},
                                      {queue_count, 5},
                                      {queue, <<"chat">>},
                                      {routing_key,<<"spark.chat">>},

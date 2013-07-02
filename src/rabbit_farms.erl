@@ -104,7 +104,7 @@ init([]) ->
     {ok, #state{}}.
 
 handle_call({stop, Reason}, From, State)->
- 	error_logger:info_msg("handle stop Reason ~p ",[Reason]),
+ 	error_logger:info_msg("Rabbit Farm Handle stop Reason ~p ",[Reason]),
 	Reply = terminate(Reason, State),
 	{reply, Reply, State};
 handle_call({publish, RabbitCarrot}, From, State)
@@ -208,7 +208,9 @@ terminate(Reason, State) ->
 	error_logger:info_msg("Terminate farms ~p ",[Farms]),
 	[ begin
 		FarmNodeName      = ?TO_FARM_NODE_NAME(FarmName),
-		delete_rabbit_farm_instance(FarmNodeName)
+		{ok, FarmOptions} = application:get_env(?APP, FarmNodeName),
+		error_logger:info_msg("Terminate Options FarmName ~p ~p ",[FarmNodeName, FarmsOptions]),
+		delete_rabbit_farm_instance(FarmName, FarmNodeName)
 	  end
 	  || FarmName <-Farms],
 	error_logger:info_msg("Terminated farms ~p ",[Farms]),
@@ -339,7 +341,7 @@ create_rabbit_farm_instance(RabbitFarmModel)->
 	ok.
 
 
-delete_rabbit_farm_instance(FarmName)->
+delete_rabbit_farm_instance(FarmName, FarmOptions) when is_list(FarmOptions) ->
 	case ets:lookup(?ETS_FARMS, FarmName) of 
 		 [RabbitFarm] ->
 		 	#rabbit_farm{connection = Connection, channels = Channels} = RabbitFarm,
@@ -448,17 +450,6 @@ publish_fun(Type, Exchange, RoutingKey, Message, ContentType)->
 subscribe_fun(Type, #'basic.consume'{} = Subscription)->
 	get_fun(Type, Subscription, []).
 
-%
-%callBackReply(Pid) when is_pid(Pid) ->
-%    try
-%    	receive 
-%    		{ok, Reply} -> {ok, Reply}; 
-%    		E -> E
-%    	end
-%    catch 
-%    	Class:Reason -> {Class, Reason}
-%    end.
-
 get_fun(cast, Method, Content)->
 	fun(Channel)->
 			amqp_channel:cast(Channel, Method, Content)
@@ -467,8 +458,6 @@ get_fun(call, Method, Content)->
 	fun(Channel)->
 			amqp_channel:call(Channel, Method, Content)
 	end.
-
-
 
 ensure_binary(undefined)->
 	undefined;
