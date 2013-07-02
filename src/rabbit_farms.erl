@@ -55,8 +55,7 @@ start()->
     ok = application:start(?APP).
 
 stop()->
- 	terminate()
-    %application:stop(?APP).
+ 	gen_server2:call(?SERVER,{stop, normal}).
 
 start_link() ->
     gen_server2:start_link({local, ?SERVER}, ?MODULE, [], []).
