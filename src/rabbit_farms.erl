@@ -104,7 +104,7 @@ init([]) ->
     {ok, #state{}}.
 
 handle_call({stop, Reason}, From, State)->
- 	error_logger:info("handle stop Reason ~p ",[Reason]),
+ 	error_logger:info_msg("handle stop Reason ~p ",[Reason]),
 	Reply = terminate(Reason, State),
 	{reply, Reply, State};
 handle_call({publish, RabbitCarrot}, From, State)
@@ -205,13 +205,13 @@ code_change(_OldVsn, State, _Extra) ->
 
 terminate(Reason, State) ->
 	{ok, Farms} = application:get_env(?APP, rabbit_farms),
-	error_logger:info("Terminate farms ~p ",[Farms]),
+	error_logger:info_msg("Terminate farms ~p ",[Farms]),
 	[ begin
 		FarmNodeName      = ?TO_FARM_NODE_NAME(FarmName),
 		delete_rabbit_farm_instance(FarmNodeName)
 	  end
 	  || FarmName <-Farms],
-	error_logger:info("Terminated farms ~p ",[Farms]),
+	error_logger:info_msg("Terminated farms ~p ",[Farms]),
     ok.
 
 
@@ -346,9 +346,9 @@ delete_rabbit_farm_instance(FarmName)->
 		 	case erlang:is_process_alive(Connection) of 
 		 		true->
 				 	ChannelSize  = orddict:size(Channels),
-				 	error_logger:info("Closing ~p channels ~p",[RabbitFarm, Channels]),
+				 	error_logger:info_msg("Closing ~p channels ~p",[RabbitFarm, Channels]),
 				 	orddict:map(fun(C)-> amqp_channel:close(C) end, Channels),
-					error_logger:info("Closing amqp connection ~p",[Connection]),
+					error_logger:info_msg("Closing amqp connection ~p",[Connection]),
 				 	amqp_connection:close(Connection, 3);
 				false->
 					lager:log(error,"the farm ~p died~n",[FarmName]),
