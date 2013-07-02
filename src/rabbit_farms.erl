@@ -209,7 +209,7 @@ terminate(_Reason, State) ->
 		 		true->
 
 		 			R = lists:map(fun(C) -> amqp_channel:close(C) end, Channels),
-		 			lager:log(info, "Close ~p channels ~p",[Channels, R]),
+		 			lager:log(info, "Close ~p channels ~p on process ~p",[Channels, R, erlang:is_process_alive(Connection)]),
 		 			amqp_connection:close(Connection, 3);
 
 				false->
