@@ -427,8 +427,7 @@ call_wrapper(FarmName, Fun)
 	    				 	random:seed(os:timestamp()),
 							ChannelIndex = random:uniform(ChannelSize),
 							Channel      = orddict:fetch(ChannelIndex, Channels),
-	    				 	Ret          = Fun(Channel),
-							{ok, Ret};
+							{ok, Fun(Channel)};
 	    				 false->
 	    				 	lager:log(error,"can not find channel from rabbit farm:~p~n",[FarmName])
 	    			end;
