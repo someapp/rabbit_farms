@@ -200,8 +200,11 @@ handle_info(_Info, State, _Extra) ->
 code_change(_OldVsn, State, _Extra) ->
     {ok, State}.
 
-terminate(_Reason, State) ->
+terminate(Reason, State) ->
 	FarmName = State#rabbit_farm.farm_name,
+	
+	lager:log(info, "Terminate ~p rabbit_farms ~p",[FarmName, Reason]),
+	
 	R0 = case ets:lookup(?ETS_FARMS, FarmName) of 
 		 [RabbitFarm] ->
 		 	#rabbit_farm{connection = Connection, channels = Channels} = RabbitFarm,
