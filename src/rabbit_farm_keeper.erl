@@ -24,10 +24,13 @@
 -include_lib("lager/include/lager.hrl").
 
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, handle_info/3, terminate/2, code_change/3]).
-
+-export([stop/1]).
 -define(RABBIT_FARMS,rabbit_farms).
 -define(SERVER,?MODULE).
 -define(RECONNECT_TIME,5000).
+
+-record(state, {status = inactive, rabbit_farm = #rabbit_farm{}}).
+
 %% ====================================================================
 %% API functions
 %% ====================================================================
@@ -36,17 +39,20 @@
 start_link(RabbitFarmModel) ->
 	ok = lager:start(),
 	#rabbit_farm{farm_name = FarmName} = RabbitFarmModel,
-    gen_server2:start_link({local, ?TO_FARM_NODE_NAME(FarmName)}, ?MODULE, [RabbitFarmModel], []).
+    gen_server2:start_link({local, ?TO_FARM_NODE_NAME(FarmName)},
+    					   ?MODULE, [RabbitFarmModel], []).
 
 get_status(FarmName) ->
 	FarmNode = ?TO_FARM_NODE_NAME(FarmName),
     gen_server2:call(FarmNode,{get_status}).
 
+stop(FarmName)->
+	FarmNode = ?TO_FARM_NODE_NAME(FarmName),
+    gen_server2:call(FarmNode,{stop, normal}).
 
 %% ====================================================================
 %% Behavioural functions 
 %% ====================================================================
--record(state, {status = inactive, rabbit_farm = #rabbit_farm{}}).
 
 init([RabbitFarm]) when is_record(RabbitFarm, rabbit_farm)->
     erlang:send_after(0, self(), {init, RabbitFarm}),
@@ -79,7 +85,7 @@ handle_info({init, RabbitFarm}, State) ->
 	case create_rabbit_farm_instance(RabbitFarm) of 
 		{ok, FarmInstance}->
 			gen_server2:cast(?RABBIT_FARMS,{on_rabbit_farm_created,FarmInstance}),
-			State#state{status = actived, rabbit_farm = FarmInstance};
+			State#state{status = activated, rabbit_farm = FarmInstance};
 		_->
 			State#state{status = inactive}
 	end,
@@ -90,17 +96,19 @@ handle_info(_Info, State) ->
 handle_info(_Info, State, _Extra) ->
     {noreply, State}.
 
-terminate(_Reason, State) ->
+terminate(_eason, State) ->
     Connection = State#rabbit_farm.connection,
+    Channels = State#rabbit_farm.Channels,
+    error_logger:info_msg("Farm Keeper stopping ~p Connection ~p Channels ~p~n",[?MODULE, Connection, Channels]),
     case erlang:is_process_alive(Connection) of 
 	 	 true->
-		 		orddict:map(fun(C) -> amqp_channel:close(C) end, State#rabbit_farm.channels),
+		 		R = orddict:map(fun(C) -> amqp_channel:close(C) end, Channels),
+		 		error_logger:info_msg("Farm Keeper closing channels ~p~n",[?MODULE, R]),
 		 		amqp_connection:close(Connection, 3);
 		 false->
 		 		FarmName = State#rabbit_farm.farm_name,
 				lager:log(error,"the farm ~p: ~p~n",[FarmName, {error, farm_died}])
-	end,
-	
+	end,	
 	ok.
 
 code_change(_OldVsn, State, _Extra) ->
@@ -143,7 +151,9 @@ create_rabbit_farm_instance(#rabbit_farm{amqp_params    = AmqpParams,
 									   	  || #rabbit_feeder{count = ChannelCount, declare = Declare, queue_declare = QDeclare, queue_bind = BindQueue} <- Feeders]),
 				IndexedChannels =  lists:zip(lists:seq(1,length(ChannelList)),ChannelList),
 				Channels        =  orddict:from_list(IndexedChannels),
-				{ok, Farm#rabbit_farm{connection = Connection, channels = Channels, status = actived}};
+				{ok, Farm#rabbit_farm{connection = Connection,
+				    channels = Channels, 
+				    status = activated}};
 		{error,Reason}->
 				{error, Reason}
 	end.
