@@ -350,7 +350,7 @@ delete_rabbit_farm_instance(FarmName, FarmOptions)->
 		 		true->
 				 	ChannelSize  = orddict:size(Channels),
 				 	error_logger:info_msg("Closing ~p channels ~p",[RabbitFarm, Channels]),
-				 	orddict:map(fun(C)-> amqp_channel:close(C) end, Channels),
+				 	orddict:map(fun(_,C)-> amqp_channel:close(C) end, Channels),
 					error_logger:info_msg("Closing amqp connection ~p",[Connection]),
 				 	amqp_connection:close(Connection, 3);
 				false->
