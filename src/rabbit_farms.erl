@@ -92,7 +92,7 @@ native_call(FarmName, Method, Content)->
 	gen_server2:cast(?SERVER, {native, {FarmName, Method, Content}}).
 
 subscribe(call, Subscription, [M, F, A]) 
-			when is_record(Subscription, 'basic.consume') ->
+			when is_record(Subscription, rabbit_processor) ->
 	gen_server2:call(?SERVER, {subscribe, Subscription, [M, F, A]
 		}).
 
@@ -120,11 +120,12 @@ handle_call({publish, RabbitCarrots}, From, State)
     	 end),
     {noreply, State};
 
-handle_cast({subscribe, #'base.consume'{} = Subscription, [M,F,A]}, State) 
-					when is_record(Subscription, 'basic.consume') 
-						 is_atom(M)->
+handle_call({subscribe, Subscription, [M,F,A]}, From, State) 
+					when is_record(Subscription, rabbit_processor), 
+						 is_atom(M), is_atom(F), is_list(A)->
     spawn(fun()-> 
-     		 subscribe_with_callback(call, Subscription, [M,F,A])
+     		 Reply = subscribe_with_callback(call, Subscription, [M,F,A]),
+     		 gen_server2:reply(From, Reply)
     	 end),
     {noreply, State};
 
@@ -374,18 +375,25 @@ publish_rabbit_carrots(Type, #rabbit_carrots{
 		  end,
 	call_wrapper(FarmName, Funs).
 
-subscribe_with_callback(Type, #'basic.consume' {
-									ticket = Ticket,
-									queue = Queue,
-									consumer_tag = Exchange,
-									no_local = NoLocal,
-									no_ack	= NoAck,
-									exclusive = Exclusive,
-									no_wait = NoWait,
-									arguments = Arguments
+subscribe_with_callback(Type, #rabbit_processor {
+								farm_name = FarmName,
+								queue_declare = QDeclare,
+								queue_bind = QBind,
+								routing_key = RKey,
+								callbacks = []
 							  } = Subscription,[M,F,A]) ->
+    FarmNodeName      = ?TO_FARM_NODE_NAME(FarmName),
+    {ok, FarmOptions} = application:get_env(?APP, FarmNodeName),
+    FeedsOpt	= proplists:get_value(feeders,FarmOptions,[]),
+    Method1 = queue_declare_fun(Type, FarmName, Queue),
+    native_rabbit_call(Type, FarmNodeName, Method, []),
+    Method2 = queue_bind_fun(Type, Queue, Exchange, RoutingKey),
+    native_rabbit_call(Type, FarmNodeName, Method, []),
     
-	.
+    %declare q
+    %bind q
+    %spawn process bind mfa to process message
+	end.
 native_rabbit_call(Type, FarmName, Method, Content)->
 	F = get_fun(Type, Method, Content),
 	call_wrapper(FarmName, F).
@@ -417,6 +425,20 @@ call_wrapper(FarmName, Fun)
 		 	{error, farm_not_exist}
 	end.
 
+queue_declare_fun(Type, FarmName, Queue)->
+	get_fun(Type,
+			#'queue.declare'{
+					queue 		= Queue
+					}
+
+queue_bind_fun(Type, Queue, Exchange, RoutingKey)->
+	get_fun(Type, 
+			#'queue.bind'{
+					queue = Queue,
+					exchange = Exchange,
+					routing_key = RoutingKey
+			}).
+
 publish_fun(Type, Exchange, RoutingKey, Message, ContentType)->
 	get_fun(Type, 
 			#'basic.publish'{ exchange    = Exchange,
@@ -445,6 +467,8 @@ get_fun(call, Method, Content)->
 	fun(Channel)->
 			amqp_channel:call(Channel, Method, Content)
 	end.
+
+
 
 ensure_binary(undefined)->
 	undefined;
