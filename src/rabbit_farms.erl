@@ -209,7 +209,7 @@ terminate(Reason, State) ->
 	[ begin
 		FarmNodeName      = ?TO_FARM_NODE_NAME(FarmName),
 		{ok, FarmOptions} = application:get_env(?APP, FarmNodeName),
-		error_logger:info_msg("Terminate Options FarmName ~p ~p ",[FarmNodeName, FarmOptions]),
+		error_logger:info_msg("Terminate Options FarmName ~p Opts ~p~n",[FarmNodeName, FarmOptions]),
 		delete_rabbit_farm_instance(FarmName, FarmNodeName)
 	  end
 	  || FarmName <-Farms],
@@ -341,10 +341,11 @@ create_rabbit_farm_instance(RabbitFarmModel)->
 	ok.
 
 
-delete_rabbit_farm_instance(FarmName, FarmOptions) when is_list(FarmOptions) ->
+delete_rabbit_farm_instance(FarmName, FarmOptions)->
 	case ets:lookup(?ETS_FARMS, FarmName) of 
 		 [RabbitFarm] ->
 		 	#rabbit_farm{connection = Connection, channels = Channels} = RabbitFarm,
+		 	error_logger:info_msg("Delete rabbit farm instance, Conn ~p Channels ~p~n",[Connection, Channels]]),
 		 	case erlang:is_process_alive(Connection) of 
 		 		true->
 				 	ChannelSize  = orddict:size(Channels),
