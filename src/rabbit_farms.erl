@@ -55,7 +55,8 @@ start()->
     ok = application:start(?APP).
 
 stop()->
-    application:stop(?APP).
+ 	terminate()
+    %application:stop(?APP).
 
 start_link() ->
     gen_server2:start_link({local, ?SERVER}, ?MODULE, [], []).
@@ -103,7 +104,9 @@ init([]) ->
     erlang:send_after(0, self(), {init}),
     {ok, #state{}}.
 
-
+handle_call({stop, Reason}, From,State)->
+	Reply = terminate(Reason, State),
+	{reply, Reply, State};
 handle_call({publish, RabbitCarrot}, From, State)
 					when is_record(RabbitCarrot, rabbit_carrot) ->
 	spawn(fun()-> 
@@ -202,7 +205,7 @@ code_change(_OldVsn, State, _Extra) ->
 
 terminate(Reason, State) ->
 	FarmName = State#rabbit_farm.farm_name,
-	
+
 	lager:log(info, "Terminate ~p rabbit_farms ~p",[FarmName, Reason]),
 	
 	R0 = case ets:lookup(?ETS_FARMS, FarmName) of 
