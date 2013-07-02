@@ -209,7 +209,7 @@ terminate(Reason, State) ->
 	[ begin
 		FarmNodeName      = ?TO_FARM_NODE_NAME(FarmName),
 		{ok, FarmOptions} = application:get_env(?APP, FarmNodeName),
-		error_logger:info_msg("Terminate Options FarmName ~p ~p ",[FarmNodeName, FarmsOptions]),
+		error_logger:info_msg("Terminate Options FarmName ~p ~p ",[FarmNodeName, FarmOptions]),
 		delete_rabbit_farm_instance(FarmName, FarmNodeName)
 	  end
 	  || FarmName <-Farms],
