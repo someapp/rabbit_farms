@@ -384,14 +384,10 @@ subscribe_with_callback(Type, #rabbit_processor {
     FarmNodeName      = ?TO_FARM_NODE_NAME(FarmName),
     {ok, FarmOptions} = application:get_env(?APP, FarmNodeName),
     FeedsOpt	= proplists:get_value(feeders,FarmOptions,[]),
-    Method1 = queue_declare_fun(Type, FarmName, Queue),
-    native_rabbit_call(Type, FarmNodeName, Method, []),
-    Method2 = queue_bind_fun(Type, Queue, Exchange, RoutingKey),
-    native_rabbit_call(Type, FarmNodeName, Method, [])
-
-    %declare q
-    %bind q
-    %spawn process bind mfa to process message
+    Declare = get_queue_setting(FeedOpt),
+    Bind = get_queue_bind(FeedOpt),
+    get_fun(Type, Declare, <<"">>),
+    get_fun(Type, Bind, <<"">>)
 	.
 native_rabbit_call(Type, FarmName, Method, Content)->
 	F = get_fun(Type, Method, Content),
@@ -424,19 +420,6 @@ call_wrapper(FarmName, Fun)
 		 	{error, farm_not_exist}
 	end.
 
-queue_declare_fun(Type, FarmName, Queue)->
-	get_fun(Type,
-			#'queue.declare'{
-					queue 		= Queue
-					}
-
-queue_bind_fun(Type, Queue, Exchange, RoutingKey)->
-	get_fun(Type, 
-			#'queue.bind'{
-					queue = Queue,
-					exchange = Exchange,
-					routing_key = RoutingKey
-			}).
 
 publish_fun(Type, Exchange, RoutingKey, Message, ContentType)->
 	get_fun(Type, 
