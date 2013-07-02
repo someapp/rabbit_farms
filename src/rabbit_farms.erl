@@ -384,8 +384,8 @@ subscribe_with_callback(Type, #rabbit_processor {
     FarmNodeName      = ?TO_FARM_NODE_NAME(FarmName),
     {ok, FarmOptions} = application:get_env(?APP, FarmNodeName),
     FeedsOpt	= proplists:get_value(feeders,FarmOptions,[]),
-    Declare = get_queue_setting(FeedOpt),
-    Bind = get_queue_bind(FeedOpt),
+    Declare = get_queue_setting(FeedsOpt),
+    Bind = get_queue_bind(FeedsOpt),
     get_fun(Type, Declare, <<"">>),
     get_fun(Type, Bind, <<"">>)
 	.
@@ -428,7 +428,7 @@ publish_fun(Type, Exchange, RoutingKey, Message, ContentType)->
 	    	#amqp_msg{props = #'P_basic'{content_type = ContentType}, payload = ensure_binary(Message)}).
 
 subscribe_fun(Type, #'basic.consume'{} = Subscription)->
-	get_fun(Type, Subscription,[]).
+	get_fun(Type, Subscription, []).
 
 %
 %callBackReply(Pid) when is_pid(Pid) ->
