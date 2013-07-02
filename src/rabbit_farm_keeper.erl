@@ -95,7 +95,7 @@ terminate(_Reason, State) ->
     case erlang:is_process_alive(Connection) of 
 	 	 true->
 		 		orddict:map(fun(C) -> amqp_channel:close(C) end, State#rabbit_farm.channels),
-		 		amqp_connection:close(Connection);
+		 		amqp_connection:close(Connection, 3);
 		 false->
 		 		FarmName = State#rabbit_farm.farm_name,
 				lager:log(error,"the farm ~p: ~p~n",[FarmName, {error, farm_died}])

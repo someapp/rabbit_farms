@@ -208,7 +208,7 @@ terminate(_Reason, State) ->
 		 	case erlang:is_process_alive(Connection) of 
 		 		true->
 		 			lists:map(fun(C) -> amqp_channel:close(C) end, Channels),
-		 			amqp_connection:close(Connection);
+		 			amqp_connection:close(Connection, 3);
 				false->
 					lager:log(error,"the farm ~p: ~p~n",[FarmName, {error, farm_died}])
 			end;
