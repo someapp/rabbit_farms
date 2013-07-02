@@ -388,12 +388,12 @@ subscribe_with_callback(Type, #rabbit_processor {
     Method1 = queue_declare_fun(Type, FarmName, Queue),
     native_rabbit_call(Type, FarmNodeName, Method, []),
     Method2 = queue_bind_fun(Type, Queue, Exchange, RoutingKey),
-    native_rabbit_call(Type, FarmNodeName, Method, []),
-    
+    native_rabbit_call(Type, FarmNodeName, Method, [])
+
     %declare q
     %bind q
     %spawn process bind mfa to process message
-	end.
+	.
 native_rabbit_call(Type, FarmName, Method, Content)->
 	F = get_fun(Type, Method, Content),
 	call_wrapper(FarmName, F).
