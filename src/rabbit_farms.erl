@@ -93,8 +93,7 @@ native_call(FarmName, Method, Content)->
 
 subscribe(call, Subscription) 
 			when is_record(Subscription, rabbit_processor) ->
-	gen_server2:call(?SERVER, {subscribe, Subscription, []
-		}).
+	gen_server2:call(?SERVER, {subscribe, Subscription, []}).
 
 %%%===================================================================
 %%% gen_server2 callbacks
