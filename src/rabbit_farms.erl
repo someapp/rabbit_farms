@@ -202,19 +202,23 @@ code_change(_OldVsn, State, _Extra) ->
 
 terminate(_Reason, State) ->
 	FarmName = State#rabbit_farm.farm_name,
-	case ets:lookup(?ETS_FARMS, FarmName) of 
+	R0 = case ets:lookup(?ETS_FARMS, FarmName) of 
 		 [RabbitFarm] ->
 		 	#rabbit_farm{connection = Connection, channels = Channels} = RabbitFarm,
 		 	case erlang:is_process_alive(Connection) of 
 		 		true->
-		 			lists:map(fun(C) -> amqp_channel:close(C) end, Channels),
+
+		 			R = lists:map(fun(C) -> amqp_channel:close(C) end, Channels),
+		 			lager:log(info, "Close ~p channels ~p",[Channels, R]),
 		 			amqp_connection:close(Connection, 3);
+
 				false->
 					lager:log(error,"the farm ~p: ~p~n",[FarmName, {error, farm_died}])
 			end;
 		 _->
 		 	lager:log(error,"~p: ~p~n",[FarmName,{error, farm_not_exist}])
 	end, 
+	lager:log(info, "Rabbit Farms terminated ~p",[R0]),
     ok.
 
 
