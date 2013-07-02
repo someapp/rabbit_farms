@@ -316,7 +316,7 @@ get_consumer(FeedOpt) ->
 		exclusive = Exclusive,
 		nowait = Nowait,
 		consumer_tag = Consumer_tag,
-		arguments= Arguments,
+		arguments= Arguments
 	}.
 
 create_rabbit_farm_model(FarmName, FarmOptions) when is_list(FarmOptions)->
@@ -429,7 +429,7 @@ subscribe_with_callback(Type, #rabbit_processor {
     FeedsOpt	= proplists:get_value(feeders,FarmOptions,[]),
     Declare = get_queue_setting(FeedsOpt),
     Bind = get_queue_bind(FeedsOpt),
-    Consumer = get_consumer(FeedOpt),
+    Consumer = get_consumer(FeedsOpt),
     QDeclare = get_fun(Type, Declare, <<"">>),
     QBind = get_fun(Type, Bind, <<"">>),
     QConsumer = get_fun(Type, Consumer, <<"">>),
