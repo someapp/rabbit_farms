@@ -125,7 +125,8 @@ handle_call({publish, RabbitCarrots}, From, State)
 handle_call({subscribe, Subscription}, From, State) 
 					when is_record(Subscription, rabbit_processor)->
     spawn(fun()-> 
-     		 Reply = subscribe_with_callback(call, Subscription),
+     		 Reply = subscribe_with_callback(call, FarmNodeName, FarmOptions,
+     		 								 FeedsOpt, Subscription),
      		 gen_server2:reply(From, Reply)
     	 end),
     {noreply, State};
@@ -297,6 +298,25 @@ get_queue_bind(FeedOpt)->
 					routing_key = RoutingKey
 
 				}.
+get_consumer(FeedOpt) ->
+	Consumer_tag = proplists:get_value(consumer_tag, FeedOpt, <<"">>),
+	Queue 		 = proplists:get_value(queue, FeedOpt, <<"">>),
+	Ticket 		 = proplists:get_value(ticket, FeedOpt, 0),
+	NoLocal		= proplists:get_value(no_local, FeedOpt, false),
+	No_ack		= proplists:get_value(no_ack, FeedOpt, false),
+	Exclusive	= proplists:get_value(exclusive, FeedOpt, false),
+	Nowait      = proplists:get_value(nowait,FeedOpt,false),
+	Arguments 	= proplists:get_value(arguments,FeedOpt,[]),
+	#'basic.consume'{
+		ticket = Ticket
+		queue = Queue,
+		no_local = NoLocal,
+		no_ack = No_ack,
+		exclusive = Exclusive,
+		nowait = Nowait,
+		consumer_tag = Consumer_tag,
+		arguments= Arguments,
+	}.
 
 create_rabbit_farm_model(FarmName, FarmOptions) when is_list(FarmOptions)->
 	FeedsOpt	= proplists:get_value(feeders,FarmOptions,[]),
@@ -401,15 +421,34 @@ subscribe_with_callback(Type, #rabbit_processor {
 								queue_bind = QBind,
 								routing_key = RKey,
 								callbacks = []
-							  } = Subscription) ->
+							  } = Subscription) 
+				when is_record(Subscription, rabbit_processor)->
     FarmNodeName      = ?TO_FARM_NODE_NAME(FarmName),
     {ok, FarmOptions} = application:get_env(?APP, FarmNodeName),
     FeedsOpt	= proplists:get_value(feeders,FarmOptions,[]),
     Declare = get_queue_setting(FeedsOpt),
     Bind = get_queue_bind(FeedsOpt),
-    get_fun(Type, Declare, <<"">>),
-    get_fun(Type, Bind, <<"">>)
-	.
+    Consumer = get_consumer(FeedsOpt),
+    QDeclare = get_fun(Type, Declare, <<"">>),
+    QBind = get_fun(Type, Bind, <<"">>),
+    QConsumer = get_consumer(FeedsOpt),
+    call_wrapper(FeedsOpt, QDeclare),
+    call_wrapper(FeedsOpt, QBind),
+    call_wrapper(FeedsOpt, QConsumer).
+
+subscribe_queue_bind(Type, #rabbit_processor {
+								farm_name = FarmName,
+								queue_declare = QDeclare,
+								queue_bind = QBind,
+								routing_key = RKey,
+								callbacks = []
+							  } = Subscription) ->
+    FarmNodeName      = ?TO_FARM_NODE_NAME(FarmName),
+    {ok, FarmOptions} = application:get_env(?APP, FarmNodeName),
+    FeedsOpt	= proplists:get_value(feeders,FarmOptions,[]),
+    Declare = get_queue_setting(FeedsOpt),
+    get_fun(Type, Declare, <<"">>).
+
 native_rabbit_call(Type, FarmName, Method, Content)->
 	F = get_fun(Type, Method, Content),
 	call_wrapper(FarmName, F).
@@ -447,9 +486,6 @@ publish_fun(Type, Exchange, RoutingKey, Message, ContentType)->
 	    					  routing_key = ensure_binary(RoutingKey)},
 	    	#amqp_msg{props = #'P_basic'{content_type = ContentType}, payload = ensure_binary(Message)}).
 
-subscribe_fun(Type, #'basic.consume'{} = Subscription)->
-	get_fun(Type, Subscription, []).
-
 get_fun(cast, Method, Content)->
 	fun(Channel)->
 			amqp_channel:cast(Channel, Method, Content)
@@ -465,3 +501,5 @@ ensure_binary(Value) when is_binary(Value)->
 	Value;
 ensure_binary(Value) when is_list(Value)->
 	list_to_binary(Value).
+
+
