@@ -103,7 +103,7 @@ init([]) ->
     erlang:send_after(0, self(), {init}),
     {ok, #state{}}.
 
-handle_call({stop, Reason}, From,State)->
+handle_call({stop, Reason}, From, State)->
 	Reply = terminate(Reason, State),
 	{reply, Reply, State};
 handle_call({publish, RabbitCarrot}, From, State)
@@ -203,26 +203,12 @@ code_change(_OldVsn, State, _Extra) ->
     {ok, State}.
 
 terminate(Reason, State) ->
-	FarmName = State#rabbit_farm.farm_name,
-
-	lager:log(info, "Terminate ~p rabbit_farms ~p",[FarmName, Reason]),
-	
-	R0 = case ets:lookup(?ETS_FARMS, FarmName) of 
-		 [RabbitFarm] ->
-		 	#rabbit_farm{connection = Connection, channels = Channels} = RabbitFarm,
-		 	case erlang:is_process_alive(Connection) of 
-		 		true->
-
-		 			R = lists:map(fun(C) -> amqp_channel:close(C) end, Channels),
-		 			lager:log(info, "Close ~p channels ~p on process ~p",[Channels, R, erlang:is_process_alive(Connection)]),
-		 			amqp_connection:close(Connection, 3);
-
-				false->
-					lager:log(error,"the farm ~p: ~p~n",[FarmName, {error, farm_died}])
-			end;
-		 _->
-		 	lager:log(error,"~p: ~p~n",[FarmName,{error, farm_not_exist}])
-	end, 
+	{ok, Farms} = application:get_env(?APP, rabbit_farms),
+	[ begin
+		FarmNodeName      = ?TO_FARM_NODE_NAME(FarmName),
+		delete_rabbit_farm_instance(FarmNodeName)
+	  end
+	  || FarmName <-Farms],
 	lager:log(info, "Rabbit Farms terminated ~p",[R0]),
     ok.
 
@@ -349,6 +335,26 @@ create_rabbit_farm_instance(RabbitFarmModel)->
 			lager:log(error,"create rabbit farm keeper failed, farm:~n~p~n",[RabbitFarmModel])
 	end,
 	ok.
+
+
+delete_rabbit_farm_instance(FarmName)->
+	case ets:lookup(?ETS_FARMS, FarmName) of 
+		 [RabbitFarm] ->
+		 	#rabbit_farm{connection = Connection, channels = Channels} = RabbitFarm,
+		 	case erlang:is_process_alive(Connection) of 
+		 		true->
+				 	ChannelSize  = orddict:size(Channels),
+				 	orddict:map(fun(C)-> amqp_channel:close(C) end, Channels),
+				 	amqp_connection:close(Connection, 3);
+				false->
+					lager:log(error,"the farm ~p died~n",[FarmName]),
+					{error, farm_died}
+			end;
+		 _->
+		 	lager:log(error,"can not find rabbit farm:~p~n",[FarmName]),
+		 	{error, farm_not_exist}
+	end.
+
 
 consume_carrot_from_rabbit(Message, State)->
 	Cbks = State#rabbit_feeder.callbacks,
