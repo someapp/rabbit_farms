@@ -125,8 +125,8 @@ handle_call({publish, RabbitCarrots}, From, State)
 handle_call({subscribe, Subscription}, From, State) 
 					when is_record(Subscription, rabbit_processor)->
     spawn(fun()-> 
-     		 Reply = subscribe_with_callback(call, FarmNodeName, FarmOptions,
-     		 								 FeedsOpt, Subscription),
+
+     		 Reply = subscribe_with_callback(call, Subscription),
      		 gen_server2:reply(From, Reply)
     	 end),
     {noreply, State};
@@ -298,6 +298,7 @@ get_queue_bind(FeedOpt)->
 					routing_key = RoutingKey
 
 				}.
+
 get_consumer(FeedOpt) ->
 	Consumer_tag = proplists:get_value(consumer_tag, FeedOpt, <<"">>),
 	Queue 		 = proplists:get_value(queue, FeedOpt, <<"">>),
@@ -308,7 +309,7 @@ get_consumer(FeedOpt) ->
 	Nowait      = proplists:get_value(nowait,FeedOpt,false),
 	Arguments 	= proplists:get_value(arguments,FeedOpt,[]),
 	#'basic.consume'{
-		ticket = Ticket
+		ticket = Ticket,
 		queue = Queue,
 		no_local = NoLocal,
 		no_ack = No_ack,
@@ -428,10 +429,10 @@ subscribe_with_callback(Type, #rabbit_processor {
     FeedsOpt	= proplists:get_value(feeders,FarmOptions,[]),
     Declare = get_queue_setting(FeedsOpt),
     Bind = get_queue_bind(FeedsOpt),
-    Consumer = get_consumer(FeedsOpt),
+    Consumer = get_consumer(FeedOpt),
     QDeclare = get_fun(Type, Declare, <<"">>),
     QBind = get_fun(Type, Bind, <<"">>),
-    QConsumer = get_consumer(FeedsOpt),
+    QConsumer = get_fun(Type, Consumer, <<"">>),
     call_wrapper(FeedsOpt, QDeclare),
     call_wrapper(FeedsOpt, QBind),
     call_wrapper(FeedsOpt, QConsumer).
