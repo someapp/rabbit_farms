@@ -99,7 +99,7 @@ terminate(_Reason, State) ->
 		 false->
 		 		FarmName = State#rabbit_farm.farm_name,
 				lager:log(error,"the farm ~p: ~p~n",[FarmName, {error, farm_died}])
-	end
+	end,
 	
 	ok.
 
