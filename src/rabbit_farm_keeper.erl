@@ -98,7 +98,7 @@ handle_info(_Info, State, _Extra) ->
 
 terminate(_eason, State) ->
     Connection = State#rabbit_farm.connection,
-    Channels = State#rabbit_farm.Channels,
+    Channels = State#rabbit_farm.channels,
     error_logger:info_msg("Farm Keeper stopping ~p Connection ~p Channels ~p~n",[?MODULE, Connection, Channels]),
     case erlang:is_process_alive(Connection) of 
 	 	 true->
