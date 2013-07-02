@@ -104,6 +104,7 @@ init([]) ->
     {ok, #state{}}.
 
 handle_call({stop, Reason}, From, State)->
+	lager:log(info, "handle stop ~p",[Reason]),
 	Reply = terminate(Reason, State),
 	{reply, Reply, State};
 handle_call({publish, RabbitCarrot}, From, State)
@@ -204,6 +205,7 @@ code_change(_OldVsn, State, _Extra) ->
 
 terminate(Reason, State) ->
 	{ok, Farms} = application:get_env(?APP, rabbit_farms),
+	lager:log(info,"calling terminate ~p",[Farms]),
 	[ begin
 		FarmNodeName      = ?TO_FARM_NODE_NAME(FarmName),
 		delete_rabbit_farm_instance(FarmNodeName)
@@ -353,8 +355,8 @@ delete_rabbit_farm_instance(FarmName)->
 					{error, farm_died}
 			end;
 		 _->
-		 	lager:log(error,"can not find rabbit farm:~p~n",[FarmName]),
-		 	{error, farm_not_exist}
+		 	lager:log(info,"can not find rabbit farm:~p~n",[FarmName]),
+		 	{warn, farm_not_exist}
 	end.
 
 
