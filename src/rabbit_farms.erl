@@ -345,7 +345,7 @@ delete_rabbit_farm_instance(FarmName, FarmOptions)->
 	case ets:lookup(?ETS_FARMS, FarmName) of 
 		 [RabbitFarm] ->
 		 	#rabbit_farm{connection = Connection, channels = Channels} = RabbitFarm,
-		 	error_logger:info_msg("Delete rabbit farm instance, Conn ~p Channels ~p~n",[Connection, Channels]]),
+		 	error_logger:info_msg("Delete rabbit farm instance, Conn ~p Channels ~p~n",[Connection, Channels]),
 		 	case erlang:is_process_alive(Connection) of 
 		 		true->
 				 	ChannelSize  = orddict:size(Channels),
