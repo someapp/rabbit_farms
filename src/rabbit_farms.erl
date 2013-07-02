@@ -34,7 +34,7 @@
 -export([native_cast/2, native_cast/3]).
 -export([native_call/2, native_call/3]).
 -export([get_status/0, get_farm_pid/0]).
--export([subscribe/3]).
+-export([subscribe/2]).
 
 %% gen_server2 callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, handle_info/3,
@@ -91,9 +91,9 @@ native_call(FarmName, Method)->
 native_call(FarmName, Method, Content)->
 	gen_server2:cast(?SERVER, {native, {FarmName, Method, Content}}).
 
-subscribe(call, Subscription, [M, F, A]) 
+subscribe(call, Subscription) 
 			when is_record(Subscription, rabbit_processor) ->
-	gen_server2:call(?SERVER, {subscribe, Subscription, [M, F, A]
+	gen_server2:call(?SERVER, {subscribe, Subscription, []
 		}).
 
 %%%===================================================================
