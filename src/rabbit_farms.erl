@@ -209,7 +209,7 @@ terminate(Reason, State) ->
 		delete_rabbit_farm_instance(FarmNodeName)
 	  end
 	  || FarmName <-Farms],
-	lager:log(info, "Rabbit Farms terminated ~p",[R0]),
+	lager:log(info, "Rabbit Farms terminated ",[]),
     ok.
 
 
