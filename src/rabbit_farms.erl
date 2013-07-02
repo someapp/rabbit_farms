@@ -93,7 +93,7 @@ native_call(FarmName, Method, Content)->
 
 subscribe(call, Subscription) 
 			when is_record(Subscription, rabbit_processor) ->
-	gen_server2:call(?SERVER, {subscribe, Subscription, []}).
+	gen_server2:call(?SERVER, {subscribe, Subscription}).
 
 %%%===================================================================
 %%% gen_server2 callbacks
@@ -119,11 +119,10 @@ handle_call({publish, RabbitCarrots}, From, State)
     	 end),
     {noreply, State};
 
-handle_call({subscribe, Subscription, [M,F,A]}, From, State) 
-					when is_record(Subscription, rabbit_processor), 
-						 is_atom(M), is_atom(F), is_list(A)->
+handle_call({subscribe, Subscription}, From, State) 
+					when is_record(Subscription, rabbit_processor)->
     spawn(fun()-> 
-     		 Reply = subscribe_with_callback(call, Subscription, [M,F,A]),
+     		 Reply = subscribe_with_callback(call, Subscription),
      		 gen_server2:reply(From, Reply)
     	 end),
     {noreply, State};
@@ -380,7 +379,7 @@ subscribe_with_callback(Type, #rabbit_processor {
 								queue_bind = QBind,
 								routing_key = RKey,
 								callbacks = []
-							  } = Subscription,[M,F,A]) ->
+							  } = Subscription) ->
     FarmNodeName      = ?TO_FARM_NODE_NAME(FarmName),
     {ok, FarmOptions} = application:get_env(?APP, FarmNodeName),
     FeedsOpt	= proplists:get_value(feeders,FarmOptions,[]),
