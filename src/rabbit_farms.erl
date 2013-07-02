@@ -344,7 +344,9 @@ delete_rabbit_farm_instance(FarmName)->
 		 	case erlang:is_process_alive(Connection) of 
 		 		true->
 				 	ChannelSize  = orddict:size(Channels),
+				 	lager:log(info,"Closing ~p channels ~p",[RabbitFarm, Channels]),
 				 	orddict:map(fun(C)-> amqp_channel:close(C) end, Channels),
+					lager:log(info,"Closing amqp connection ~p",[Connection]),
 				 	amqp_connection:close(Connection, 3);
 				false->
 					lager:log(error,"the farm ~p died~n",[FarmName]),
