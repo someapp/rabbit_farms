@@ -10,6 +10,15 @@
                   gen_server2,
                   lager
                  ]},
+  {modules,[
+            password,
+            rabbit_farm_util,
+            rabbit_farms,
+            rabbit_farm_keeper,
+            rabbit_farm_keeper_sup,
+            rabbit_farms_sup,
+            rabbit_farms_app
+  ]},
   {mod, { rabbit_farms_app, []}},
 %  {env, [{config, "conf/rabbit_farms.config"}]}
   {env, [{rabbit_farms,[default]},

@@ -121,7 +121,7 @@ handle_call({publish, RabbitCarrots}, From, State)
     		 gen_server2:reply(From, Reply)
     	 end),
     {noreply, State};
-    
+
 %%TODO put that intto gen-server 
 handle_call({subscribe, Subscription}, From, State) 
 					when is_record(Subscription, rabbit_processor)->
@@ -186,7 +186,7 @@ handle_info({#'basic.deliver'{consumer_tag = Tag},
     Reply = try 
     	Message = binary_to_term(Msg),
     	consume_carrot_from_rabbit(Message, State),
-    	get_fun(cast, #'basic.ack'{delivery_tag = Tag}, [])
+    	rabbit_farm_util:get_fun(cast, #'basic.ack'{delivery_tag = Tag}, [])
 	catch
 		C:R -> lager:log(error,"Cannot parse message"), 
 			   {C, R}
@@ -239,9 +239,9 @@ get_connection_setting(FarmOptions) ->
 	Host        = proplists:get_value(host,FarmOptions,"localhost"),
 	Port        = proplists:get_value(port,FarmOptions,5672),
 	#amqp_params_network{
-				username     = ensure_binary(UserName),
+				username     = rabbit_farm_util:ensure_binary(UserName),
 				password     = Password,
-				virtual_host = ensure_binary(VirtualHost),
+				virtual_host = rabbit_farm_util:ensure_binary(VirtualHost),
 				host         = Host,
 				port         = Port
 				}.
@@ -258,8 +258,8 @@ get_exchange_setting(FeedOpt)->
 	Arguments    = proplists:get_value(arguments,FeedOpt,[]),
 	#'exchange.declare'{
 				ticket      = Ticket,
-				exchange    = ensure_binary(Exchange),
-				type        = ensure_binary(Type),
+				exchange    = rabbit_farm_util:ensure_binary(Exchange),
+				type        = rabbit_farm_util:ensure_binary(Type),
 				passive     = Passive,
 				durable     = Durable,
 				auto_delete = AutoDelete,
@@ -434,15 +434,15 @@ subscribe_with_callback(Type, #rabbit_processor {
 	Declare = Subscription#rabbit_processor.queue_declare,
 	Bind = Subscription#rabbit_processor.queue_bind,
 
-    DeclareFun = get_fun(Type, Declare),
-    BindFun = get_fun(Type, Bind),
-    ConsumerFun = get_fun(Type, Consumer),
+    DeclareFun = rabbit_farm_util:get_fun(Type, Declare),
+    BindFun = rabbit_farm_util:get_fun(Type, Bind),
+    ConsumerFun = rabbit_farm_util:get_fun(Type, Consumer),
     call_wrapper(FarmName, DeclareFun),
     call_wrapper(FarmName, BindFun),
     call_wrapper(FarmName, ConsumerFun).
 
 native_rabbit_call(Type, FarmName, Method, Content)->
-	F = get_fun(Type, Method, Content),
+	F = rabbit_farm_util:get_fun(Type, Method, Content),
 	call_wrapper(FarmName, F).
 
 %%TODO put that intto gen-server 
@@ -475,36 +475,9 @@ call_wrapper(FarmName, Fun)
 
 
 publish_fun(Type, Exchange, RoutingKey, Message, ContentType)->
-	get_fun(Type, 
+	rabbit_farm_util:get_fun(Type, 
 			#'basic.publish'{ exchange    = Exchange,
-	    					  routing_key = ensure_binary(RoutingKey)},
-	    	#amqp_msg{props = #'P_basic'{content_type = ContentType}, payload = ensure_binary(Message)}).
-
-%%TODO put that intto gen-server 
-get_fun(cast, Method)->
-	fun(Channel)->
-
-			amqp_channel:cast(Channel, Method)
-	end;
-get_fun(call, Method)->
-	fun(Channel)->
-			amqp_channel:call(Channel, Method)
-	end.
-
-get_fun(cast, Method, Content)->
-	fun(Channel)->
-			amqp_channel:cast(Channel, Method, Content)
-	end;
-get_fun(call, Method, Content)->
-	fun(Channel)->
-			amqp_channel:call(Channel, Method, Content)
-	end.
-
-ensure_binary(undefined)->
-	undefined;
-ensure_binary(Value) when is_binary(Value)->
-	Value;
-ensure_binary(Value) when is_list(Value)->
-	list_to_binary(Value).
+	    					  routing_key = rabbit_farm_util:ensure_binary(RoutingKey)},
+	    	#amqp_msg{props = #'P_basic'{content_type = ContentType}, payload = rabbit_farm_util:ensure_binary(Message)}).
 
 
