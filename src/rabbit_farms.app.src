@@ -13,11 +13,14 @@
   {modules,[
             password,
             rabbit_farm_util,
-            rabbit_farms,
+            rabbit_farm_config,
             rabbit_farm_keeper,
             rabbit_farm_keeper_sup,
             rabbit_farms_sup,
-            rabbit_farms_app
+            rabbit_farms,
+            rabbit_farms_app,
+            rabbit_farms_consumer,
+            rabbit_farms_consumer_sup
   ]},
   {mod, { rabbit_farms_app, []}},
 %  {env, [{config, "conf/rabbit_farms.config"}]}
