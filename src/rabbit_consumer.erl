@@ -34,6 +34,7 @@ start_()->
     ok = application:start(rabbit_common),
     ok = application:start(amqp_client),
     ok = application:start(crypto),
+    ok = application:start(restc),
     ok = application:start(?APP).
 
 start()->
@@ -93,90 +94,10 @@ handle_cast(Info, State) ->
 	erlang:display(Info),
     {noreply, State}.
 
-%%%===================================================================
-%%% gen_server2 callbacks
-%%%===================================================================
-
-init([]) ->
-    erlang:send_after(0, self(), {init}),
-    {ok, #state{}}.
-
-handle_call({stop, Reason}, From, State)->
- 	error_logger:info_msg("Rabbit Farm Handle stop Reason ~p ",[Reason]),
-	Reply = terminate(Reason, State),
-	{reply, Reply, State};
-handle_call({publish, RabbitCarrot}, From, State)
-					when is_record(RabbitCarrot, rabbit_carrot) ->
-	spawn(fun()-> 
-				Reply = publish_rabbit_carrot(call, RabbitCarrot),
-				gen_server2:reply(From, Reply)
-		  end),
-	{noreply, State};
-handle_call({publish, RabbitCarrots}, From, State) 
-					when is_record(RabbitCarrots,rabbit_carrots) ->
-    spawn(fun()-> 
-    		 Reply = publish_rabbit_carrots(cast,RabbitCarrots),
-    		 gen_server2:reply(From, Reply)
-    	 end),
-    {noreply, State};
-
-%%TODO put that intto gen-server 
-handle_call({subscribe, Subscription}, From, State) 
-					when is_record(Subscription, rabbit_processor)->
-    spawn(fun()-> 
-     		 Reply = subscribe_with_callback(call, Subscription),
-     		 gen_server2:reply(From, Reply)
-    	 end),
-    {noreply, State};
-
-handle_call({native, {FarmName, Method, Content}}, From, State) ->
-	spawn(fun()-> 
-				Reply = native_rabbit_call(call, FarmName, Method, Content),
-				gen_server2:reply(From, Reply)
-		  end),
-	{noreply, State};
-handle_call({get_status}, _From, State)->
-	{reply, {ok, State}, State};
-handle_call({get_farm_pid}, _From, State)->
-    Farms = ets:tab2list(?ETS_FARMS),
-    {reply, {ok, Farms}, State};
-handle_call(_Request, _From, State) ->
-    Reply = {error, function_clause},
-    {reply, Reply, State}.
-
-handle_cast({publish, RabbitCarrot}, State) 
-					when is_record(RabbitCarrot, rabbit_carrot) ->
-    spawn(fun()-> publish_rabbit_carrot(cast, RabbitCarrot) end),
-    {noreply, State};
-handle_cast({publish, RabbitCarrots}, State) 
-					when is_record(RabbitCarrots,rabbit_carrots) ->
-    spawn(fun()-> 
-    		 publish_rabbit_carrots(cast, RabbitCarrots)
-    	 end),
-    {noreply, State};
-handle_cast({native, {FarmName, Method, Content}}, State) ->
-	spawn(fun()-> native_rabbit_call(cast, FarmName, Method, Content) end),
-	{noreply, State};
-handle_cast({on_rabbit_farm_created, RabbitFarmInstance}, State) ->
-	true = ets:insert(?ETS_FARMS, RabbitFarmInstance),
-	lager:log(info,"rabbit farm have been working:~n~p~n", [RabbitFarmInstance]),
-	{noreply, State};
-handle_cast({on_rabbit_farm_die, _Reason, RabbitFarm}, State) 
-					when is_record(RabbitFarm, rabbit_farm) ->
-    InitRabbitFarm = RabbitFarm#rabbit_farm{status = inactive, connection = undefined, channels = orddict:new()},
-    true           = ets:insert(?ETS_FARMS, InitRabbitFarm),
-    {noreply, State};
-handle_cast(Info, State) ->
-	erlang:display(Info),
-    {noreply, State}.
-
-%%TODO put that intto gen-server 
 handle_info({#'basic.consume_ok'{}}, State)->
 	{reply, ok, State};
-%%TODO put that intto gen-server 
 handle_info({#'basic.cancel_ok'{}}, State)->
 	{reply, ok, State};
-%%TODO put that intto gen-server 
 handle_info({#'basic.deliver'{consumer_tag = Tag},
 			 #amqp_msg{payload = Msg}}, State
 			) ->
