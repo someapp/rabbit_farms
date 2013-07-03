@@ -6,24 +6,32 @@
 -include_lib("lager/include/lager.hrl").
 
 -define(SERVER,?MODULE).
--define(APP,rabbit_farms).
+-define(APP,rabbit_consumer).
 -define(ETS_FARMS,ets_rabbit_farms).
 
--record(state,{status = uninitialized}).
+-record(state, {
+		farm_name = [] ::string(),
+		status = uninitialized  :: initialized | uninitialized,
+		connection :: pid(),
+		connection_ref ::reference(),
+		channel :: pid(),
+		channel_ref :: reference(),
+		rabbitmq_restart_timeout = 5000 :: pos_integer(), % restart timeout
+		amqp_params =  #amqp_params_network{},
+		rest_params = ##rest_conf{}
+}).
 
 %% API
 -export([start_/0, start/0, stop/0, start_link/0]).
 
 -export([get_status/0, ping/0]).
--export([subscribe/2, 
+-export([subscribe/2, restart/0,
 	     register_callback/1,
 	     start_consume/0]).
 
 %% gen_server2 callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, handle_info/3,
         terminate/2, code_change/3]).
-
--record(state,{status = uninitialized}).
 
 start_()->
     ok = application:start(syntax_tools),
@@ -55,9 +63,27 @@ get_status()->
 get_farm_pid()->
 	gen_server2:call(?SERVER, {get_farm_pid}).
 
-	subscribe(call, Subscription) 
+subscribe(call, Subscription) 
 			when is_record(Subscription, rabbit_processor) ->
 	gen_server2:call(?SERVER, {subscribe, Subscription}).
+
+subscribe(cast, Subscription) 
+			when is_record(Subscription, rabbit_processor) ->
+	gen_server2:cast(?SERVER, {subscribe, Subscription}).
+
+register_callback([{module, M},
+				   {function, Fun},
+				   {argument, Arg}])->
+	gen_server2:call(?SERVER, {register_callback, 
+							  [ {module, M},
+					 			{function, Fun},
+					 			{argument, Arg}}).
+
+start_consume()->
+	gen_server2:call(?SERVER, {consume}).
+
+restart()->
+	gen_server2:call(?SERVER, {restart}).
 
 %%%===================================================================
 %%% gen_server2 callbacks
@@ -85,6 +111,17 @@ handle_call({get_status}, _From, State)->
 
 handle_call({ping}, _From, State)->
 	{reply, {ok, pong}, State};
+
+handle_call({register_callback,[{module, M},
+					 			{function, Fun},
+					 			{argument, Arg}]}, From, State) ->
+	{reply, Reply, State};
+
+handle_call({consume}, From, Stat)->
+	{reply, Reply, State};
+
+handle_call({restart}, From, Stat)->
+	{reply, Reply, State};
 
 handle_call(_Request, _From, State) ->
     Reply = {error, function_clause},
