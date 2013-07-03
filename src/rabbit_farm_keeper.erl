@@ -103,7 +103,7 @@ terminate(_eason, State) ->
     case erlang:is_process_alive(Connection) of 
 	 	 true->
 		 		R = orddict:map(fun(_,C) -> amqp_channel:close(C) end, Channels),
-		 		error_logger:info_msg("Farm Keeper closing channels ~p~n",
+		 		error_logger:info_msg("Farm Keeper ~p closing channels ~p~n",
 		 			[?MODULE, R]),
 		 		amqp_connection:close(Connection, 3);
 		 false->
