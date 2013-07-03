@@ -431,9 +431,9 @@ subscribe_with_callback(Type, #rabbit_processor {
     Bind = get_queue_bind(FeedsOpt),
     Consumer = get_consumer(FeedsOpt),
 
-    QDeclare = get_fun(Type, Declare, <<"">>),
-    QBind = get_fun(Type, Bind, <<"">>),
-    QConsumer = get_fun(Type, Consumer, <<"">>),
+    QDeclare = get_fun(Type, Declare),
+    QBind = get_fun(Type, Bind),
+    QConsumer = get_fun(Type, Consumer),
     call_wrapper(FeedsOpt, QDeclare),
     call_wrapper(FeedsOpt, QBind),
     call_wrapper(FeedsOpt, QConsumer).
