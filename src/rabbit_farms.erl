@@ -437,12 +437,12 @@ subscribe_with_callback(Type, #rabbit_processor {
 	Declare = Subscription#rabbit_processor.queue_declare,
 	Bind = Subscription#rabbit_processor.queue_bind,
 
-    QDeclare = get_fun(Type, Declare),
-    QBind = get_fun(Type, Bind),
-    QConsumer = get_fun(Type, Consumer),
-    call_wrapper(FeedsOpt, QDeclare),
-    call_wrapper(FeedsOpt, QBind),
-    call_wrapper(FeedsOpt, QConsumer).
+    DeclareFun = get_fun(Type, Declare),
+    BindFun = get_fun(Type, Bind),
+    ConsumerFun = get_fun(Type, Consumer),
+    call_wrapper(FeedsOpt, DeclareFun),
+    call_wrapper(FeedsOpt, BindFun),
+    call_wrapper(FeedsOpt, ConsumerFun).
 
 subscribe_queue_bind(Type, #rabbit_processor {
 								farm_name = FarmName,
