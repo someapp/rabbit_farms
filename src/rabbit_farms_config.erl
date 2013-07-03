@@ -4,7 +4,7 @@
 	get_exchange_setting/1,
 	get_queue_setting/1,
 	get_queue_bind/1,
-	get_consumer
+	get_consumer/1
 ]).
 
 -include("rabbit_farms.hrl").
