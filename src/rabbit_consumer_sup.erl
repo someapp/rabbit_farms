@@ -1,6 +1,5 @@
 -module(rabbit_consumer_sup).
--behaviour(supervisor),
-\-behaviour(supervisor).
+-behaviour(supervisor).
 
 -include("rabbit_farms_internal.hrl").
 
