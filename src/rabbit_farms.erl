@@ -456,7 +456,8 @@ native_rabbit_call(Type, FarmName, Method, Content)->
 	call_wrapper(FarmName, F).
 
 call_wrapper(FarmName, Fun) 
-					when is_function(Fun,1) ->			
+					when is_function(Fun,1) ->	
+	error_logger:info_msg("FarmName ~p, Fun ~p ",[FarmName, Fun]),		
 	case ets:lookup(?ETS_FARMS, FarmName) of 
 		 [RabbitFarm] ->
 		 	#rabbit_farm{connection = Connection, channels = Channels} = RabbitFarm,
@@ -468,6 +469,7 @@ call_wrapper(FarmName, Fun)
 	    				 	random:seed(os:timestamp()),
 							ChannelIndex = random:uniform(ChannelSize),
 							Channel      = orddict:fetch(ChannelIndex, Channels),
+						    error_logger:info_msg("Channel ~p, Channels ~p ",[Channel, Channels]),
 							{ok, Fun(Channel)};
 	    				 false->
 	    				 	lager:log(error,"can not find channel from rabbit farm:~p~n",[FarmName])
