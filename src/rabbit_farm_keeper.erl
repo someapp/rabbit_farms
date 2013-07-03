@@ -135,17 +135,13 @@ create_rabbit_farm_instance(#rabbit_farm{amqp_params    = AmqpParams,
 										  	begin 
 												{ok, Channel}           = amqp_connection:open_channel(Connection),
 												{'exchange.declare_ok'} = amqp_channel:call(Channel, Declare),
-												lager:log(info,"exchange declared ok",[]),
+												errog_logger:info_msg("exchange declared ok",[]),
 												R = amqp_channel:call(Channel, QDeclare),
 												{'queue.declare_ok', _, _, _} = R,
-
-												lager:log(info,"queue declared ok ~p",[R]),
-											
+												errog_logger:info_msg("queue declared ok ~p",[R]),					
 												R1 = amqp_channel:call(Channel, BindQueue),
 												{'queue.bind_ok'} =R1,
-
-												lager:log(info,"queue bind ok ~p",[R1]),
-												
+												errog_logger:info_msg("queue bind ok ~p",[R1]),												
 												Channel
 										    end
 									  	    || _I <-lists:seq(1,ChannelCount)]
