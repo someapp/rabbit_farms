@@ -427,13 +427,7 @@ subscribe_with_callback(Type, #rabbit_processor {
     FarmNodeName      = ?TO_FARM_NODE_NAME(FarmName),
     {ok, FarmOptions} = application:get_env(?APP, FarmNodeName),
     FeedsOpt	= proplists:get_value(feeders,FarmOptions,[]),
-%    Declare = get_queue_setting(FeedsOpt),
-%   Bind = get_queue_bind(FeedsOpt),
     Consumer = get_consumer(FeedsOpt),
-  
-%    error_logger:info_msg("Declare ~p~n",[Declare]),
-%    error_logger:info_msg("Bind ~p~n",[Bind]),
-%    error_logger:info_msg("Consumer ~p~n",[Consumer]),
 	Declare = Subscription#rabbit_processor.queue_declare,
 	Bind = Subscription#rabbit_processor.queue_bind,
 
@@ -443,19 +437,6 @@ subscribe_with_callback(Type, #rabbit_processor {
     call_wrapper(FeedsOpt, DeclareFun),
     call_wrapper(FeedsOpt, BindFun),
     call_wrapper(FeedsOpt, ConsumerFun).
-
-subscribe_queue_bind(Type, #rabbit_processor {
-								farm_name = FarmName,
-								queue_declare = QDeclare,
-								queue_bind = QBind,
-								routing_key = RKey,
-								callbacks = []
-							  } = Subscription) ->
-    FarmNodeName      = ?TO_FARM_NODE_NAME(FarmName),
-    {ok, FarmOptions} = application:get_env(?APP, FarmNodeName),
-    FeedsOpt	= proplists:get_value(feeders,FarmOptions,[]),
-    Declare = get_queue_setting(FeedsOpt),
-    get_fun(Type, Declare).
 
 native_rabbit_call(Type, FarmName, Method, Content)->
 	F = get_fun(Type, Method, Content),
@@ -497,24 +478,20 @@ publish_fun(Type, Exchange, RoutingKey, Message, ContentType)->
 	    	#amqp_msg{props = #'P_basic'{content_type = ContentType}, payload = ensure_binary(Message)}).
 
 get_fun(cast, Method)->
-	error_logger:info_msg("amqp_CAST 222",[]),
 	fun(Channel)->
 
 			amqp_channel:cast(Channel, Method)
 	end;
 get_fun(call, Method)->
-	error_logger:info_msg("amqp_CALL 222",[]),
 	fun(Channel)->
 			amqp_channel:call(Channel, Method)
 	end.
 
 get_fun(cast, Method, Content)->
-	error_logger:info_msg("amqp_CAST 33333",[]),
 	fun(Channel)->
 			amqp_channel:cast(Channel, Method, Content)
 	end;
 get_fun(call, Method, Content)->
-	error_logger:info_msg("amqp_CALL 33333",[]),
 	fun(Channel)->
 			amqp_channel:call(Channel, Method, Content)
 	end.
