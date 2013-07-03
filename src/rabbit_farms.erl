@@ -121,7 +121,8 @@ handle_call({publish, RabbitCarrots}, From, State)
     		 gen_server2:reply(From, Reply)
     	 end),
     {noreply, State};
-
+    
+%%TODO put that intto gen-server 
 handle_call({subscribe, Subscription}, From, State) 
 					when is_record(Subscription, rabbit_processor)->
     spawn(fun()-> 
@@ -172,12 +173,13 @@ handle_cast(Info, State) ->
 	erlang:display(Info),
     {noreply, State}.
 
+%%TODO put that intto gen-server 
 handle_info({#'basic.consume_ok'{}}, State)->
 	{reply, ok, State};
-
+%%TODO put that intto gen-server 
 handle_info({#'basic.cancel_ok'{}}, State)->
 	{reply, ok, State};
-
+%%TODO put that intto gen-server 
 handle_info({#'basic.deliver'{consumer_tag = Tag},
 			 #amqp_msg{payload = Msg}}, State
 			) ->
@@ -416,6 +418,7 @@ publish_rabbit_carrots(Type, #rabbit_carrots{
 		  end,
 	call_wrapper(FarmName, Funs).
 
+%%TODO put that intto gen-server 
 subscribe_with_callback(Type, #rabbit_processor {
 								farm_name = FarmName,
 								queue_declare = QDeclare,
@@ -442,6 +445,7 @@ native_rabbit_call(Type, FarmName, Method, Content)->
 	F = get_fun(Type, Method, Content),
 	call_wrapper(FarmName, F).
 
+%%TODO put that intto gen-server 
 call_wrapper(FarmName, Fun) 
 					when is_function(Fun,1) ->	
 	case ets:lookup(?ETS_FARMS, FarmName) of 
@@ -476,6 +480,7 @@ publish_fun(Type, Exchange, RoutingKey, Message, ContentType)->
 	    					  routing_key = ensure_binary(RoutingKey)},
 	    	#amqp_msg{props = #'P_basic'{content_type = ContentType}, payload = ensure_binary(Message)}).
 
+%%TODO put that intto gen-server 
 get_fun(cast, Method)->
 	fun(Channel)->
 
