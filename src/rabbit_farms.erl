@@ -434,9 +434,9 @@ subscribe_with_callback(Type, #rabbit_processor {
     DeclareFun = get_fun(Type, Declare),
     BindFun = get_fun(Type, Bind),
     ConsumerFun = get_fun(Type, Consumer),
-    call_wrapper(FeedsOpt, DeclareFun),
-    call_wrapper(FeedsOpt, BindFun),
-    call_wrapper(FeedsOpt, ConsumerFun).
+    call_wrapper(FarmName, DeclareFun),
+    call_wrapper(FarmName, BindFun),
+    call_wrapper(FarmName, ConsumerFun).
 
 native_rabbit_call(Type, FarmName, Method, Content)->
 	F = get_fun(Type, Method, Content),
@@ -444,7 +444,6 @@ native_rabbit_call(Type, FarmName, Method, Content)->
 
 call_wrapper(FarmName, Fun) 
 					when is_function(Fun,1) ->	
-	error_logger:info_msg("FarmName ~p, Fun ~p ",[FarmName, Fun]),		
 	case ets:lookup(?ETS_FARMS, FarmName) of 
 		 [RabbitFarm] ->
 		 	#rabbit_farm{connection = Connection, channels = Channels} = RabbitFarm,
