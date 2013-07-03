@@ -430,6 +430,7 @@ subscribe_with_callback(Type, #rabbit_processor {
     Declare = get_queue_setting(FeedsOpt),
     Bind = get_queue_bind(FeedsOpt),
     Consumer = get_consumer(FeedsOpt),
+
     QDeclare = get_fun(Type, Declare, <<"">>),
     QBind = get_fun(Type, Bind, <<"">>),
     QConsumer = get_fun(Type, Consumer, <<"">>),
@@ -486,6 +487,15 @@ publish_fun(Type, Exchange, RoutingKey, Message, ContentType)->
 			#'basic.publish'{ exchange    = Exchange,
 	    					  routing_key = ensure_binary(RoutingKey)},
 	    	#amqp_msg{props = #'P_basic'{content_type = ContentType}, payload = ensure_binary(Message)}).
+
+get_fun(cast, Method)->
+	fun(Channel)->
+			amqp_channel:cast(Channel, Method)
+	end;
+get_fun(call, Method)->
+	fun(Channel)->
+			amqp_channel:call(Channel, Method)
+	end.
 
 get_fun(cast, Method, Content)->
 	fun(Channel)->
