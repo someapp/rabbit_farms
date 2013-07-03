@@ -434,8 +434,8 @@ subscribe_with_callback(Type, #rabbit_processor {
 %    error_logger:info_msg("Declare ~p~n",[Declare]),
 %    error_logger:info_msg("Bind ~p~n",[Bind]),
 %    error_logger:info_msg("Consumer ~p~n",[Consumer]),
-	Declare = Subscription#queue_declare,
-	Bind = Subscription#queue_bind,
+	Declare = Subscription#rabbit_processor.queue_declare,
+	Bind = Subscription#rabbit_processor.queue_bind,
 
     QDeclare = get_fun(Type, Declare),
     QBind = get_fun(Type, Bind),
