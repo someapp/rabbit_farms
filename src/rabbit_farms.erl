@@ -497,24 +497,24 @@ publish_fun(Type, Exchange, RoutingKey, Message, ContentType)->
 	    	#amqp_msg{props = #'P_basic'{content_type = ContentType}, payload = ensure_binary(Message)}).
 
 get_fun(cast, Method)->
-	error_logger:info_msg("amqp_CAST 222"[]),
+	error_logger:info_msg("amqp_CAST 222",[]),
 	fun(Channel)->
 
 			amqp_channel:cast(Channel, Method)
 	end;
 get_fun(call, Method)->
-	error_logger:info_msg("amqp_CALL 222"[]),
+	error_logger:info_msg("amqp_CALL 222,[]),
 	fun(Channel)->
 			amqp_channel:call(Channel, Method)
 	end.
 
 get_fun(cast, Method, Content)->
-	error_logger:info_msg("amqp_CAST 33333"[]),
+	error_logger:info_msg("amqp_CAST 33333",[]),
 	fun(Channel)->
 			amqp_channel:cast(Channel, Method, Content)
 	end;
 get_fun(call, Method, Content)->
-	error_logger:info_msg("amqp_CALL 33333"[]),
+	error_logger:info_msg("amqp_CALL 33333",[]),
 	fun(Channel)->
 			amqp_channel:call(Channel, Method, Content)
 	end.
