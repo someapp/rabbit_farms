@@ -7,6 +7,10 @@
 	get_consumer
 ]).
 
+-include("rabbit_farms.hrl").
+-include("rabbit_farms_internal.hrl").
+-include_lib("lager/include/lager.hrl").
+
 get_connection_setting(FarmOptions) ->
 	UserName    = proplists:get_value(username,FarmOptions,<<"guest">>),
 	Password    = proplists:get_value(password,FarmOptions,<<"V2pOV2JHTXpVVDA9">>),
