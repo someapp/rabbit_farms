@@ -427,14 +427,15 @@ subscribe_with_callback(Type, #rabbit_processor {
     FarmNodeName      = ?TO_FARM_NODE_NAME(FarmName),
     {ok, FarmOptions} = application:get_env(?APP, FarmNodeName),
     FeedsOpt	= proplists:get_value(feeders,FarmOptions,[]),
-    Declare = get_queue_setting(FeedsOpt),
-    Bind = get_queue_bind(FeedsOpt),
+%    Declare = get_queue_setting(FeedsOpt),
+%   Bind = get_queue_bind(FeedsOpt),
     Consumer = get_consumer(FeedsOpt),
   
-    error_logger:info_msg("Declare ~p~n",[Declare]),
-    error_logger:info_msg("Bind ~p~n",[Bind]),
-    error_logger:info_msg("Consumer ~p~n",[Consumer]),
-     
+%    error_logger:info_msg("Declare ~p~n",[Declare]),
+%    error_logger:info_msg("Bind ~p~n",[Bind]),
+%    error_logger:info_msg("Consumer ~p~n",[Consumer]),
+	Declare = Subscription#queue_declare,
+	Bind = Subscription#queue_bind,
 
     QDeclare = get_fun(Type, Declare),
     QBind = get_fun(Type, Bind),
