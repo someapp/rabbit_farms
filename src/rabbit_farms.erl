@@ -503,7 +503,7 @@ get_fun(cast, Method)->
 			amqp_channel:cast(Channel, Method)
 	end;
 get_fun(call, Method)->
-	error_logger:info_msg("amqp_CALL 222,[]),
+	error_logger:info_msg("amqp_CALL 222",[]),
 	fun(Channel)->
 			amqp_channel:call(Channel, Method)
 	end.
