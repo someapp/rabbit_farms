@@ -37,7 +37,14 @@
                                      {queue_count, 5},
                                      {queue, <<"chat">>},
                                      {routing_key,<<"spark.chat">>},
-                                     {type, <<"topic">>}]
+                                     {type, <<"topic">>},
+                                     {callback_mod, ejabberd_send_im},
+                                     {callback,
+                                        [{decode_message,1},
+                                         {compress_message,1},
+                                         {send_missed_im,1}
+                                        ]}
+                                     ]
                                   ]}
                          ]}
   		  ]}
