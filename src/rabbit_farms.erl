@@ -34,7 +34,6 @@
 -export([native_cast/2, native_cast/3]).
 -export([native_call/2, native_call/3]).
 -export([get_status/0, get_farm_pid/0, ping/0]).
--export([subscribe/2]).
 
 %% gen_server2 callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, handle_info/3,
@@ -94,10 +93,6 @@ native_call(FarmName, Method)->
 native_call(FarmName, Method, Content)->
 	gen_server2:cast(?SERVER, {native, {FarmName, Method, Content}}).
 
-subscribe(call, Subscription) 
-			when is_record(Subscription, rabbit_processor) ->
-	gen_server2:call(?SERVER, {subscribe, Subscription}).
-
 %%%===================================================================
 %%% gen_server2 callbacks
 %%%===================================================================
@@ -122,15 +117,6 @@ handle_call({publish, Messages}, From, State)
     spawn(fun()-> 
     		 Reply = publish_rabbit_messages(cast,Messages),
     		 gen_server2:reply(From, Reply)
-    	 end),
-    {noreply, State};
-
-%%TODO put that into gen-server 
-handle_call({subscribe, Subscription}, From, State) 
-					when is_record(Subscription, rabbit_processor)->
-    spawn(fun()-> 
-     		 Reply = subscribe_with_callback(call, Subscription),
-     		 gen_server2:reply(From, Reply)
     	 end),
     {noreply, State};
 
@@ -174,26 +160,6 @@ handle_cast({on_rabbit_farm_die, _Reason, RabbitFarm}, State)
 handle_cast(Info, State) ->
 	erlang:display(Info),
     {noreply, State}.
-
-%%TODO put that intto gen-server 
-handle_info({#'basic.consume_ok'{}}, State)->
-	{reply, ok, State};
-%%TODO put that intto gen-server 
-handle_info({#'basic.cancel_ok'{}}, State)->
-	{reply, ok, State};
-%%TODO put that intto gen-server 
-handle_info({#'basic.deliver'{consumer_tag = Tag},
-			 #amqp_msg{payload = Msg}}, State
-			) ->
-    Reply = try 
-    	Message = binary_to_term(Msg),
-    	consume_carrot_from_rabbit(Message, State),
-    	rabbit_farm_util:get_fun(cast, #'basic.ack'{delivery_tag = Tag}, [])
-	catch
-		C:R -> lager:log(error,"Cannot parse message"), 
-			   {C, R}
-	end,
-	{reply, Reply, State};
 
 handle_info({init}, State) ->
 	ets:new(?ETS_FARMS,[protected, named_table, {keypos, #rabbit_farm.farm_name}, {read_concurrency, true}]),
@@ -298,12 +264,6 @@ delete_rabbit_farm_instance(FarmName, FarmOptions)->
 		 	{warn, farm_not_exist}
 	end.
 
-
-consume_carrot_from_rabbit(Message, State)->
-	Cbks = State#rabbit_feeder.callbacks,
-	Ret = lists:map(fun([M,F,Message])-> erlang:apply(M,F,[Message]) end, Cbks),
-	Ret.
-
 publish_rabbit_message(Type, #rabbit_message{
 								 farm_name    = FarmName,
 								 exchange     = Exchange,
@@ -330,29 +290,6 @@ publish_rabbit_messages(Type, #rabbit_messages{
 			[F(Channel)||F<-FunList]
 		  end,
 	call_wrapper(FarmName, Funs).
-
-%%TODO put that intto gen-server 
-subscribe_with_callback(Type, #rabbit_processor {
-								farm_name = FarmName,
-								queue_declare = QDeclare,
-								queue_bind = QBind,
-								routing_key = RKey,
-								callbacks = []
-							  } = Subscription) 
-				when is_record(Subscription, rabbit_processor)->
-    FarmNodeName      = ?TO_FARM_NODE_NAME(FarmName),
-    {ok, FarmOptions} = application:get_env(?APP, FarmNodeName),
-    FeedsOpt	= proplists:get_value(feeders,FarmOptions,[]),
-    Consumer = rabbit_farms_config:get_consumer(FeedsOpt),
-	Declare = Subscription#rabbit_processor.queue_declare,
-	Bind = Subscription#rabbit_processor.queue_bind,
-
-    DeclareFun = rabbit_farm_util:get_fun(Type, Declare),
-    BindFun = rabbit_farm_util:get_fun(Type, Bind),
-    ConsumerFun = rabbit_farm_util:get_fun(Type, Consumer),
-    call_wrapper(FarmName, DeclareFun),
-    call_wrapper(FarmName, BindFun),
-    call_wrapper(FarmName, ConsumerFun).
 
 native_rabbit_call(Type, FarmName, Method, Content)->
 	F = rabbit_farm_util:get_fun(Type, Method, Content),
