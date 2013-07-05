@@ -325,7 +325,7 @@ publish_rabbit_messages(Type, #rabbit_messages{
 	 
 	FunList=
 	[publish_fun(Type, Exchange, RoutingKey, Message, ContentType)
-	||#rabbit_message_body{routing_key = RoutingKey, message = Message} <- RabbitCarrotBodies],
+	||#rabbit_message_body{routing_key = RoutingKey, payload = Message} <- RabbitCarrotBodies],
 	Funs= fun(Channel) ->
 			[F(Channel)||F<-FunList]
 		  end,
