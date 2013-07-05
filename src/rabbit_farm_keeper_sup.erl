@@ -32,14 +32,14 @@
 %% ===================================================================
 %% API functions
 %% ===================================================================
-
+-spec start_link()-> {ok, pid()} | {error, term()}.
 start_link(RabbitFarmModel) ->
     supervisor:start_link({local, ?MODULE}, ?MODULE, [RabbitFarmModel]).
 
 %% ===================================================================
 %% Supervisor callbacks
 %% ===================================================================
-
+-spec init(list())-> {ok, term()} | {error, term()}.
 init([RabbitFarmModel]) ->
 	#rabbit_farm{farm_name = FarmName} = RabbitFarmModel,
     {ok, { {one_for_one, 5, 10}, [?CHILD(FarmName, rabbit_farm_keeper, worker, [RabbitFarmModel])]} }.

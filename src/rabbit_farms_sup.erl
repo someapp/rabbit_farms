@@ -30,14 +30,14 @@
 %% ===================================================================
 %% API functions
 %% ===================================================================
-
+-spec start_link()-> {ok, pid()} | {error, term()}.
 start_link() ->
     supervisor:start_link({local, ?MODULE}, ?MODULE, []).
 
 %% ===================================================================
 %% Supervisor callbacks
 %% ===================================================================
-
+-spec init(list())-> {ok, term()} | {error, term()}.
 init([]) ->
     {ok, { {one_for_one, 5, 10}, [?CHILD(rabbit_farms,worker)]} }.
 
