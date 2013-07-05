@@ -7,8 +7,7 @@
 	get_consumer/1
 ]).
 
--include("rabbit_farms.hrl").
--include("rabbit_farms_internal.hrl").
+-include_lib("amqp_client/include/amqp_client.hrl").
 -include_lib("lager/include/lager.hrl").
 
 get_connection_setting(FarmOptions) ->

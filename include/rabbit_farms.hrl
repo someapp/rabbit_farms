@@ -1,12 +1,12 @@
--record(rabbit_carrot,{ farm_name   = default, 
+-record(rabbit_message,{ farm_name   = default, 
 						exchange    = <<"">>, 
 						routing_key = <<"">>, 
-						message     = <<"">>,
+						payload     = <<"">>,
 						content_type}).
 
--record(rabbit_carrot_body,{routing_key = <<"">>, message = <<"">>}).
+-record(rabbit_message_body,{routing_key = <<"">>, payload = <<"">>}).
 
--record(rabbit_carrots,{ farm_name            = default, 
+-record(rabbit_messages,{ farm_name            = default, 
 					 	 exchange             = <<"">>, 
- 						 rabbit_carrot_bodies = [],
+ 						 rabbit_message_bodies = [],
 					 	 content_type}).

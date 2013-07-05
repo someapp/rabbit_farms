@@ -33,7 +33,7 @@
 -export([publish/2]).
 -export([native_cast/2, native_cast/3]).
 -export([native_call/2, native_call/3]).
--export([get_status/0, get_farm_pid/0]).
+-export([get_status/0, get_farm_pid/0, ping/0]).
 -export([subscribe/2]).
 
 %% gen_server2 callbacks
@@ -66,18 +66,21 @@ get_status()->
 get_farm_pid()->
 	gen_server2:call(?SERVER, {get_farm_pid}).
 
-publish(cast, RabbitCarrot)
-				when is_record(RabbitCarrot,rabbit_carrot)->
-	gen_server2:cast(?SERVER, {publish, RabbitCarrot});
-publish(cast, RabbitCarrots)
-				when is_record(RabbitCarrots,rabbit_carrots)->
-	gen_server2:cast(?SERVER, {publish, RabbitCarrots});
-publish(call, RabbitCarrot)
-				when is_record(RabbitCarrot,rabbit_carrot)->
-	gen_server2:call(?SERVER, {publish, RabbitCarrot});
-publish(call, RabbitCarrots)
-				when is_record(RabbitCarrots,rabbit_carrots)->
-	gen_server2:call(?SERVER, {publish, RabbitCarrots}).
+ping()->
+	gen_server2:call(?SERVER,{ping}).
+
+publish(cast, Message)
+				when is_record(Message,rabbit_carrot)->
+	gen_server2:cast(?SERVER, {publish, Message});
+publish(cast, Messages)
+				when is_record(Messages,rabbit_carrots)->
+	gen_server2:cast(?SERVER, {publish, Messages});
+publish(call, Message)
+				when is_record(Message,rabbit_carrot)->
+	gen_server2:call(?SERVER, {publish, Message});
+publish(call, Messages)
+				when is_record(Messages,rabbit_carrots)->
+	gen_server2:call(?SERVER, {publish, Messages}).
 
 native_cast(FarmName, Method)->
 	gen_server2:cast(?SERVER, {native, {FarmName, Method, none}}).
@@ -107,22 +110,22 @@ handle_call({stop, Reason}, From, State)->
  	error_logger:info_msg("Rabbit Farm Handle stop Reason ~p ",[Reason]),
 	Reply = terminate(Reason, State),
 	{reply, Reply, State};
-handle_call({publish, RabbitCarrot}, From, State)
-					when is_record(RabbitCarrot, rabbit_carrot) ->
+handle_call({publish, Message}, From, State)
+					when is_record(Message, rabbit_carrot) ->
 	spawn(fun()-> 
-				Reply = publish_rabbit_carrot(call, RabbitCarrot),
+				Reply = publish_rabbit_carrot(call, Message),
 				gen_server2:reply(From, Reply)
 		  end),
 	{noreply, State};
-handle_call({publish, RabbitCarrots}, From, State) 
-					when is_record(RabbitCarrots,rabbit_carrots) ->
+handle_call({publish, Messages}, From, State) 
+					when is_record(Messages,rabbit_carrots) ->
     spawn(fun()-> 
-    		 Reply = publish_rabbit_carrots(cast,RabbitCarrots),
+    		 Reply = publish_rabbit_carrots(cast,Messages),
     		 gen_server2:reply(From, Reply)
     	 end),
     {noreply, State};
 
-%%TODO put that intto gen-server 
+%%TODO put that into gen-server 
 handle_call({subscribe, Subscription}, From, State) 
 					when is_record(Subscription, rabbit_processor)->
     spawn(fun()-> 
@@ -146,14 +149,14 @@ handle_call(_Request, _From, State) ->
     Reply = {error, function_clause},
     {reply, Reply, State}.
 
-handle_cast({publish, RabbitCarrot}, State) 
-					when is_record(RabbitCarrot, rabbit_carrot) ->
-    spawn(fun()-> publish_rabbit_carrot(cast, RabbitCarrot) end),
+handle_cast({publish, Message}, State) 
+					when is_record(Message, rabbit_carrot) ->
+    spawn(fun()-> publish_rabbit_carrot(cast, Message) end),
     {noreply, State};
-handle_cast({publish, RabbitCarrots}, State) 
-					when is_record(RabbitCarrots,rabbit_carrots) ->
+handle_cast({publish, Messages}, State) 
+					when is_record(Messages,rabbit_carrots) ->
     spawn(fun()-> 
-    		 publish_rabbit_carrots(cast, RabbitCarrots)
+    		 publish_rabbit_carrots(cast, Messages)
     	 end),
     {noreply, State};
 handle_cast({native, {FarmName, Method, Content}}, State) ->
@@ -307,8 +310,8 @@ publish_rabbit_carrot(Type, #rabbit_carrot{
 								 routing_key  = RoutingKey,
 								 message      = Message,
 								 content_type = ContentType
-							}  = RabbitCarrot)
-				when is_record(RabbitCarrot,rabbit_carrot)->
+							}  = Message)
+				when is_record(Message,rabbit_carrot)->
 	F = publish_fun(Type, Exchange, RoutingKey, Message, ContentType),
 	call_wrapper(FarmName, F).
 
@@ -317,8 +320,8 @@ publish_rabbit_carrots(Type, #rabbit_carrots{
 								 exchange             = Exchange,
 								 rabbit_carrot_bodies = RabbitCarrotBodies,
 								 content_type = ContentType
-							}  = RabbitCarrots)
-				when is_record(RabbitCarrots,rabbit_carrots)->
+							}  = Messages)
+				when is_record(Messages,rabbit_carrots)->
 	 
 	FunList=
 	[publish_fun(Type, Exchange, RoutingKey, Message, ContentType)
