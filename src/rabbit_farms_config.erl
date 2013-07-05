@@ -10,6 +10,7 @@
 -include_lib("amqp_client/include/amqp_client.hrl").
 -include_lib("lager/include/lager.hrl").
 
+-spec get_connection_setting(list()) ->#'amqp_params_network'{}.
 get_connection_setting(FarmOptions) ->
 	UserName    = proplists:get_value(username,FarmOptions,<<"guest">>),
 	Password    = proplists:get_value(password,FarmOptions,<<"V2pOV2JHTXpVVDA9">>),
@@ -24,7 +25,7 @@ get_connection_setting(FarmOptions) ->
 				host         = Host,
 				port         = Port
 				}.
-
+-spec get_exchange_setting(list())-> #'exchange.declare'{}.
 get_exchange_setting(FeedOpt)->
 	Ticket       = proplists:get_value(ticket,FeedOpt,0),
 	Exchange     = proplists:get_value(exchange,FeedOpt),
@@ -47,6 +48,7 @@ get_exchange_setting(FeedOpt)->
 				arguments   = Arguments
 				}.
 
+-spec get_queue_setting(list())-> #'queue.declare'{}.
 get_queue_setting(FeedOpt)->
 	QTicket		 = proplists:get_value(qticket, FeedOpt, 0),
 	Queue 		 = proplists:get_value(queue, FeedOpt, <<"">>),
@@ -68,6 +70,7 @@ get_queue_setting(FeedOpt)->
 					arguments   = QArguments									
 					}.	
 
+-spec get_queue_bind(list())->#'queue.bind'{}.
 get_queue_bind(FeedOpt)->
 	Queue 		 = proplists:get_value(queue, FeedOpt, <<"">>),
 	Exchange     = proplists:get_value(exchange,FeedOpt),
@@ -78,7 +81,7 @@ get_queue_bind(FeedOpt)->
 					routing_key = RoutingKey
 
 				}.
-
+-spec get_consumer(list())-> #'basic.consume'{}.
 get_consumer(FeedOpt) ->
 	Consumer_tag = proplists:get_value(consumer_tag, FeedOpt, <<"">>),
 	Queue 		 = proplists:get_value(queue, FeedOpt, <<"">>),
