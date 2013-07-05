@@ -308,7 +308,7 @@ publish_rabbit_message(Type, #rabbit_message{
 								 farm_name    = FarmName,
 								 exchange     = Exchange,
 								 routing_key  = RoutingKey,
-								 message      = Message,
+								 payload      = Message,
 								 content_type = ContentType
 							}  = Message)
 				when is_record(Message,rabbit_message)->
