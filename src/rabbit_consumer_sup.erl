@@ -15,7 +15,7 @@
 %% ===================================================================
 %% API functions
 %% ===================================================================
--spec start_link(RabbitFarmModel::#rabbit_farm())-> {ok, pid()} | {error, term()}.
+-spec start_link(RabbitFarmModel::#rabbit_farm{}-> {ok, pid()} | {error, term()}.
 start_link(RabbitFarmModel) ->
     supervisor:start_link({local, ?MODULE}, ?MODULE, [RabbitFarmModel]).
 
