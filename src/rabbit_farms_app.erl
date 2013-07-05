@@ -28,6 +28,6 @@
 start(_StartType, _StartArgs) ->
     rabbit_farms_sup:start_link().
     
--spec start(atom()) -> ok.
+-spec stop(atom()) -> ok.
 stop(_State) ->
     ok.
