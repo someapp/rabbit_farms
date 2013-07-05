@@ -70,16 +70,16 @@ ping()->
 	gen_server2:call(?SERVER,{ping}).
 
 publish(cast, Message)
-				when is_record(Message,rabbit_carrot)->
+				when is_record(Message,rabbit_message)->
 	gen_server2:cast(?SERVER, {publish, Message});
 publish(cast, Messages)
-				when is_record(Messages,rabbit_carrots)->
+				when is_record(Messages,rabbit_messages)->
 	gen_server2:cast(?SERVER, {publish, Messages});
 publish(call, Message)
-				when is_record(Message,rabbit_carrot)->
+				when is_record(Message,rabbit_message)->
 	gen_server2:call(?SERVER, {publish, Message});
 publish(call, Messages)
-				when is_record(Messages,rabbit_carrots)->
+				when is_record(Messages,rabbit_messages)->
 	gen_server2:call(?SERVER, {publish, Messages}).
 
 native_cast(FarmName, Method)->
@@ -111,16 +111,16 @@ handle_call({stop, Reason}, From, State)->
 	Reply = terminate(Reason, State),
 	{reply, Reply, State};
 handle_call({publish, Message}, From, State)
-					when is_record(Message, rabbit_carrot) ->
+					when is_record(Message, rabbit_message) ->
 	spawn(fun()-> 
-				Reply = publish_rabbit_carrot(call, Message),
+				Reply = publish_rabbit_message(call, Message),
 				gen_server2:reply(From, Reply)
 		  end),
 	{noreply, State};
 handle_call({publish, Messages}, From, State) 
-					when is_record(Messages,rabbit_carrots) ->
+					when is_record(Messages,rabbit_messages) ->
     spawn(fun()-> 
-    		 Reply = publish_rabbit_carrots(cast,Messages),
+    		 Reply = publish_rabbit_messages(cast,Messages),
     		 gen_server2:reply(From, Reply)
     	 end),
     {noreply, State};
@@ -150,13 +150,13 @@ handle_call(_Request, _From, State) ->
     {reply, Reply, State}.
 
 handle_cast({publish, Message}, State) 
-					when is_record(Message, rabbit_carrot) ->
-    spawn(fun()-> publish_rabbit_carrot(cast, Message) end),
+					when is_record(Message, rabbit_message) ->
+    spawn(fun()-> publish_rabbit_message(cast, Message) end),
     {noreply, State};
 handle_cast({publish, Messages}, State) 
-					when is_record(Messages,rabbit_carrots) ->
+					when is_record(Messages,rabbit_messages) ->
     spawn(fun()-> 
-    		 publish_rabbit_carrots(cast, Messages)
+    		 publish_rabbit_messages(cast, Messages)
     	 end),
     {noreply, State};
 handle_cast({native, {FarmName, Method, Content}}, State) ->
@@ -304,28 +304,28 @@ consume_carrot_from_rabbit(Message, State)->
 	Ret = lists:map(fun([M,F,Message])-> erlang:apply(M,F,[Message]) end, Cbks),
 	Ret.
 
-publish_rabbit_carrot(Type, #rabbit_carrot{
+publish_rabbit_message(Type, #rabbit_message{
 								 farm_name    = FarmName,
 								 exchange     = Exchange,
 								 routing_key  = RoutingKey,
 								 message      = Message,
 								 content_type = ContentType
 							}  = Message)
-				when is_record(Message,rabbit_carrot)->
+				when is_record(Message,rabbit_message)->
 	F = publish_fun(Type, Exchange, RoutingKey, Message, ContentType),
 	call_wrapper(FarmName, F).
 
-publish_rabbit_carrots(Type, #rabbit_carrots{
+publish_rabbit_messages(Type, #rabbit_messages{
 								 farm_name            = FarmName,
 								 exchange             = Exchange,
-								 rabbit_carrot_bodies = RabbitCarrotBodies,
+								 rabbit_message_bodies = RabbitCarrotBodies,
 								 content_type = ContentType
 							}  = Messages)
-				when is_record(Messages,rabbit_carrots)->
+				when is_record(Messages,rabbit_messages)->
 	 
 	FunList=
 	[publish_fun(Type, Exchange, RoutingKey, Message, ContentType)
-	||#rabbit_carrot_body{routing_key = RoutingKey, message = Message} <- RabbitCarrotBodies],
+	||#rabbit_message_body{routing_key = RoutingKey, message = Message} <- RabbitCarrotBodies],
 	Funs= fun(Channel) ->
 			[F(Channel)||F<-FunList]
 		  end,
