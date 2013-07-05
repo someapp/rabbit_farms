@@ -24,9 +24,10 @@
 %% ===================================================================
 %% Application callbacks
 %% ===================================================================
-
+-spec start(atom(), list())-> {ok, pid()} | {error, tuple()}.
 start(_StartType, _StartArgs) ->
     rabbit_farms_sup:start_link().
-
+    
+-spec start(atom()) -> ok.
 stop(_State) ->
     ok.
