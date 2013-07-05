@@ -18,7 +18,7 @@
 
 -behaviour(supervisor).
 
--include("rabbit_farms_internal.hrl").
+-include_lib("rabbit_farms_internal.hrl").
 
 %% API
 -export([start_link/1]).

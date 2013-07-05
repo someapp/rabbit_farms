@@ -1,7 +1,7 @@
 -module(rabbit_consumer_sup).
 -behaviour(supervisor).
 
--include("rabbit_farms_internal.hrl").
+-include_lib("rabbit_farms_internal.hrl").
 
 %% API
 -export([start_link/1]).
@@ -15,7 +15,7 @@
 %% ===================================================================
 %% API functions
 %% ===================================================================
--spec start_link(RabbitFarmModel::#rabbit_farm{}-> {ok, pid()} | {error, term()}.
+-spec start_link(RabbitFarmModel::#rabbit_farm{})-> {ok, pid()} | {error, term()}.
 start_link(RabbitFarmModel) ->
     supervisor:start_link({local, ?MODULE}, ?MODULE, [RabbitFarmModel]).
 
