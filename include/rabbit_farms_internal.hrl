@@ -25,4 +25,3 @@
 					   }).
 
 -define(TO_FARM_NODE_NAME(V),list_to_atom("farm_" ++ atom_to_list((V)))).
--export_type([rabbit_farm, rabbit_feeder, rabbit_processor]).
