@@ -34,7 +34,6 @@
 		connect/0,
 		reconnect/0,
 		disconnect/0,
-		subscribe/0,
 		subscribe/1,
 		consume/3,
 		register_callback/1
@@ -86,7 +85,7 @@ disconnect()->
 consume(call, Mod, Func) when is_atom(Mod),
 						is_atom(Func)->
 
-	gen_server:call(?SERVER, {consume, Mod, Func}).
+	gen_server:call(?SERVER, {consume, Mod, Func});
 
 
 consume(cast, Mod, Func) when is_atom(Mod),
@@ -97,7 +96,7 @@ consume(cast, Mod, Func) when is_atom(Mod),
 
 subscribe(call, Subscription) 
 			when is_record(Subscription, rabbit_processor) ->
-	gen_server:call(?SERVER, {subscribe, Subscription}).
+	gen_server:call(?SERVER, {subscribe, Subscription});
 
 subscribe(cast, Subscription) 
 			when is_record(Subscription, rabbit_processor) ->
@@ -109,7 +108,7 @@ register_callback([{module, M},
 	gen_server:call(?SERVER, {register_callback, 
 							  [ {module, M},
 					 			{function, Fun},
-					 			{argument, Arg}]).
+					 			{argument, Arg}]}).
 
 
 %%%===================================================================
@@ -154,9 +153,11 @@ handle_call({ping}, _From, State)->
 handle_call({register_callback,[{module, M},
 					 			{function, Fun},
 					 			{argument, Arg}]}, From, State) ->
+	Reply = 
 	{reply, Reply, State};
 
-handle_call({consume}, From, Stat)->
+handle_call({consume}, From, State)->
+ 	Reply = 
 	{reply, Reply, State};
 
 handle_call(_Request, _From, State) ->
