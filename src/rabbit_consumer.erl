@@ -115,12 +115,15 @@ register_callback(M, Fun, Arg)->
 
 init([]) ->
     erlang:send_after(?DELAY, self(), {init}),
+ 	
     {ok, #consumer_state{
     	connection = self(),
     	rabbitmq_restart_timeout = ?RECON_TIMEOUT
     }}.
 
 handle_call({connect}, _From, State)->
+	
+
 	{reply, {ok, State}, State};
 
 handle_call({reconnect}, _From, State)->
@@ -341,4 +344,14 @@ call_wrapper(FarmName, Fun)
 		 	{error, farm_not_exist}
 	end.
 
+is_alive(P)->
+ 	erlang:is_process_alive(P).
+close_channel(true, Close)->
+	close(amqp_channel,Close).
+close_connection(true, Close)->
+	close(amqp_connection,Close).
+close(M) when is_atom(M)->
+	ok = M:close(C);
+close(_) ->
+	ok.
 
