@@ -19,6 +19,7 @@
 		connection_ref ::reference(),
 		channel :: pid(),
 		channel_ref :: reference(),
+		transform_module :: module(),
 		rabbitmq_restart_timeout = 5000 :: pos_integer(), % restart timeout
 		amqp_params = #amqp_params_network{} ::#amqp_params_network{},
 		rest_params = #rest_conf{} ::#rest_conf{},
@@ -36,7 +37,7 @@
 		disconnect/0,
 		subscribe/2,
 		consume/3,
-		register_callback/3
+		register_callback/1
 ]).
 
 %% gen_server callbacks
@@ -104,9 +105,7 @@ subscribe(cast, Subscription)
 
 register_callback(M, Fun, Arg)->
 	gen_server:call(?SERVER, {register_callback, 
-							  [ {module, M},
-					 			{function, Fun},
-					 			{argument, Arg}]}).
+							  Module}).
 
 
 %%%===================================================================
@@ -123,13 +122,15 @@ init([]) ->
 
 handle_call({connect}, _From, State)->
 	
-
+	
 	{reply, {ok, State}, State};
 
 handle_call({reconnect}, _From, State)->
+
 	{reply, {ok, State}, State};
 
 handle_call({disconnect}, _From, State)->
+
 	{reply, {ok, State}, State};
 
 handle_call({stop, Reason}, From, State)->
@@ -151,11 +152,11 @@ handle_call({get_status}, _From, State)->
 handle_call({ping}, _From, State)->
 	{reply, {ok, pong}, State};
 
-handle_call({register_callback,[{module, M},
-					 			{function, Fun},
-					 			{argument, Arg}]}, From, State) ->
-	Reply = 
-	{reply, Reply, State};
+handle_call({register_callback, Module},
+			 From, State) ->
+	
+	State#consumer_state.transform_module = Module,
+	{reply, ok, State};
 
 handle_call({consume}, From, State)->
  	Reply = 
