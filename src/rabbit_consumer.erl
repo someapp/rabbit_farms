@@ -108,7 +108,7 @@ register_callback([{module, M},
 	gen_server:call(?SERVER, {register_callback, 
 							  [ {module, M},
 					 			{function, Fun},
-					 			{argument, Arg}}).
+					 			{argument, Arg}]).
 
 
 %%%===================================================================
