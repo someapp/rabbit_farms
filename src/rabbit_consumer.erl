@@ -187,7 +187,9 @@ handle_info({#'basic.deliver'{consumer_tag = Tag},
 	{reply, Reply, State};
 
 handle_info({init}, State) ->
-	ets:new(?ETS_FARMS,[protected, named_table, {keypos, #rabbit_farm.farm_name}, {read_concurrency, true}]),
+	ets:new(?ETS_FARMS,[protected, named_table, 
+		   {keypos, #rabbit_farm.farm_name},
+		   {read_concurrency, true}]),
 	{ok, NewState} = init_rabbit_farm(State),
     {noreply, NewState};
 handle_info(_Info, State) ->
