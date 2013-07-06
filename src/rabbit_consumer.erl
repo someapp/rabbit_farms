@@ -36,7 +36,7 @@
 		disconnect/0,
 		subscribe/1,
 		consume/3,
-		register_callback/1
+		register_callback/3
 ]).
 
 %% gen_server callbacks
