@@ -3,6 +3,7 @@
 
 -include("rabbit_farms.hrl").
 -include("rabbit_farms_internal.hrl").
+-include("rest_conn.hrl").
 -include_lib("lager/include/lager.hrl").
 
 -define(SERVER,?MODULE).
