@@ -34,7 +34,7 @@
 		connect/0,
 		reconnect/0,
 		disconnect/0,
-		subscribe/1,
+		subscribe/2,
 		consume/3,
 		register_callback/3
 ]).
@@ -102,9 +102,7 @@ subscribe(cast, Subscription)
 			when is_record(Subscription, rabbit_processor) ->
 	gen_server:cast(?SERVER, {subscribe, Subscription}).
 
-register_callback([{module, M},
-				   {function, Fun},
-				   {argument, Arg}])->
+register_callback(M, Fun, Arg)->
 	gen_server:call(?SERVER, {register_callback, 
 							  [ {module, M},
 					 			{function, Fun},
