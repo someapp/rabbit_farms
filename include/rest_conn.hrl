@@ -1,4 +1,4 @@
--record(rest_conn,{       
+-record(rest_conf,{       
 	 idMap    = []
 	 spark_api_endpoint,
          spark_app_id,
