@@ -28,18 +28,15 @@
 -export([start_/0, start/0, stop/0, start_link/0]).
 
 -export([get_status/0, ping/0]).
--export([subscribe/2, restart/0,
-	     register_callback/1,
-	     start_consume/0]).
+
 -export([
 		connect/0,
-		connect/1,
 		reconnect/0,
 		disconnect/0,
 		subscribe/0,
 		subscribe/1,
-		consume/2,
-		status/0
+		consume/3,
+		register_callback/1
 ]).
 
 %% gen_server callbacks
@@ -77,21 +74,24 @@ get_farm_pid()->
 	gen_server:call(?SERVER, {get_farm_pid}).
 
 connect()->
-
-	ok.
-
-connect(Conf)->
-	ok.
+	gen_server:call(?SERVER, {connect}).
 
 reconnect()->
-	ok.
+	gen_server:call(?SERVER, {reconnect}).
 
 disconnect()->
-	ok.
+	gen_server:call(?SERVER, {disconnect}).
 
-consume(Mod, Func)->
+consume(call, Mod, Func) when is_atom(Mod),
+						is_atom(Func)->
 
-	ok.
+	gen_server:call(?SERVER, {consume, Mod, Func}).
+
+
+consume(cast, Mod, Func) when is_atom(Mod),
+						is_atom(Func)->
+
+	gen_server:cast(?SERVER, {consume, Mod, Func}).
 
 
 subscribe(call, Subscription) 
@@ -110,11 +110,6 @@ register_callback([{module, M},
 					 			{function, Fun},
 					 			{argument, Arg}}).
 
-start_consume()->
-	gen_server:call(?SERVER, {consume}).
-
-restart()->
-	gen_server:call(?SERVER, {restart}).
 
 %%%===================================================================
 %%% gen_server callbacks
@@ -126,6 +121,15 @@ init([]) ->
     	connection = self(),
     	rabbitmq_restart_timeout = ?RECON_TIMEOUT
     }}.
+
+handle_call({connect}, _From, State)->
+	{reply, {ok, State}, State};
+
+handle_call({reconnect}, _From, State)->
+	{reply, {ok, State}, State};
+
+handle_call({disconnect}, _From, State)->
+	{reply, {ok, State}, State};
 
 handle_call({stop, Reason}, From, State)->
  	error_logger:info_msg("Rabbit Consumers stopping with reason ~p ",[Reason]),
@@ -152,9 +156,6 @@ handle_call({register_callback,[{module, M},
 	{reply, Reply, State};
 
 handle_call({consume}, From, Stat)->
-	{reply, Reply, State};
-
-handle_call({restart}, From, Stat)->
 	{reply, Reply, State};
 
 handle_call(_Request, _From, State) ->
