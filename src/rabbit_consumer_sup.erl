@@ -25,6 +25,9 @@ start_link(RabbitFarmModel) ->
 -spec init(list())-> {ok, term()} | {error, term()}.
 init([RabbitFarmModel]) ->
 	#rabbit_farm{farm_name = FarmName} = RabbitFarmModel,
-    {ok, { {one_for_one, 5, 10}, 
-         [?CHILD(FarmName, rabbit_consumer, worker, [RabbitFarmModel])]} }.
+    Children = [
+    		?CHILD(spark_app_config_srv,worker),
+    		?CHILD(FarmName, rabbit_consumer, worker, 
+         	[RabbitFarmModel])],
+    {ok, { {one_for_one, 5, 10}, Children }}.
 
