@@ -1,5 +1,5 @@
 -module(rabbit_consumer).
--behaviour(gen_server2).
+-behaviour(gen_server).
 
 -include("rabbit_farms.hrl").
 -include("rabbit_farms_internal.hrl").
@@ -7,9 +7,11 @@
 
 -define(SERVER,?MODULE).
 -define(APP,rabbit_consumer).
+-define(DELAY, 10).
+-define(RECON_TIMEOUT, 5000).
 -define(ETS_FARMS,ets_rabbit_farms).
 
--record(state, {
+-record(consumer_state, {
 		farm_name = [] ::string(),
 		status = uninitialized  :: initialized | uninitialized,
 		connection :: pid(),
@@ -17,8 +19,9 @@
 		channel :: pid(),
 		channel_ref :: reference(),
 		rabbitmq_restart_timeout = 5000 :: pos_integer(), % restart timeout
-		amqp_params =  #amqp_params_network{},
-		rest_params = ##rest_conf{}
+		amqp_params = #amqp_params_network{} ::#amqp_params_network{},
+		rest_params = #rest_conf{} ::#rest_conf{},
+		retry_strategy = undef ::atom()
 }).
 
 %% API
@@ -28,70 +31,101 @@
 -export([subscribe/2, restart/0,
 	     register_callback/1,
 	     start_consume/0]).
+-export([
+		connect/0,
+		connect/1,
+		reconnect/0,
+		disconnect/0,
+		subscribe/0,
+		subscribe/1,
+		consume/2,
+		status/0
+]).
 
-%% gen_server2 callbacks
+%% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, handle_info/3,
         terminate/2, code_change/3]).
 
 start_()->
-    ok = application:start(syntax_tools),
-    ok = application:start(compiler),
-    ok = application:start(goldrush),
+    ok = app_util:start_app(syntax_tools),
+    ok = app_util:start_app(compiler),
+    ok = app_util:start_app(goldrush),
     ok = lager:start(),
-    ok = application:start(gen_server2),
-    ok = application:start(rabbit_common),
-    ok = application:start(amqp_client),
-    ok = application:start(crypto),
-    ok = application:start(restc),
-    ok = application:start(?APP).
+    ok = app_util:start_app(gen_server),
+    ok = app_util:start_app(rabbit_common),
+    ok = app_util:start_app(amqp_client),
+    ok = app_util:start_app(crypto),
+    ok = app_util:start_app(restc),
+    ok = app_util:start_app(?APP).
 
 start()->
-    ok = application:start(?APP).
+    ok = app_util:start_app(?APP).
 
 stop()->
- 	gen_server2:call(?SERVER,{stop, normal}).
+ 	gen_server:call(?SERVER,{stop, normal}).
 
 start_link() ->
-    gen_server2:start_link({local, ?SERVER}, ?MODULE, [], []).
+    gen_server:start_link({local, ?SERVER}, ?MODULE, [], []).
 
 ping()->
-	gen_server2:call(?SERVER,{ping}).
+	gen_server:call(?SERVER,{ping}).
 
 get_status()->
-    gen_server2:call(?SERVER, {get_status}).
+    gen_server:call(?SERVER, {get_status}).
 
 get_farm_pid()->
-	gen_server2:call(?SERVER, {get_farm_pid}).
+	gen_server:call(?SERVER, {get_farm_pid}).
+
+connect()->
+
+	ok.
+
+connect(Conf)->
+	ok.
+
+reconnect()->
+	ok.
+
+disconnect()->
+	ok.
+
+consume(Mod, Func)->
+
+	ok.
+
 
 subscribe(call, Subscription) 
 			when is_record(Subscription, rabbit_processor) ->
-	gen_server2:call(?SERVER, {subscribe, Subscription}).
+	gen_server:call(?SERVER, {subscribe, Subscription}).
 
 subscribe(cast, Subscription) 
 			when is_record(Subscription, rabbit_processor) ->
-	gen_server2:cast(?SERVER, {subscribe, Subscription}).
+	gen_server:cast(?SERVER, {subscribe, Subscription}).
 
 register_callback([{module, M},
 				   {function, Fun},
 				   {argument, Arg}])->
-	gen_server2:call(?SERVER, {register_callback, 
+	gen_server:call(?SERVER, {register_callback, 
 							  [ {module, M},
 					 			{function, Fun},
 					 			{argument, Arg}}).
 
 start_consume()->
-	gen_server2:call(?SERVER, {consume}).
+	gen_server:call(?SERVER, {consume}).
 
 restart()->
-	gen_server2:call(?SERVER, {restart}).
+	gen_server:call(?SERVER, {restart}).
 
 %%%===================================================================
-%%% gen_server2 callbacks
+%%% gen_server callbacks
 %%%===================================================================
 
 init([]) ->
-    erlang:send_after(0, self(), {init}),
-    {ok, #state{}}.
+    erlang:send_after(?DELAY, self(), {init}),
+    {ok, #consumer_state{
+    	connection = self(),
+    	rabbitmq_restart_timeout = ?RECON_TIMEOUT
+    }}.
 
 handle_call({stop, Reason}, From, State)->
  	error_logger:info_msg("Rabbit Consumers stopping with reason ~p ",[Reason]),
@@ -102,7 +136,7 @@ handle_call({subscribe, Subscription}, From, State)
 					when is_record(Subscription, rabbit_processor)->
     spawn(fun()-> 
      		 Reply = subscribe_with_callback(call, Subscription),
-     		 gen_server2:reply(From, Reply)
+     		 gen_server:reply(From, Reply)
     	 end),
     {noreply, State};
 
@@ -184,7 +218,7 @@ init_rabbit_farm(State)->
 		create_rabbit_farm_instance(RabbitFarmModel)
 	  end
 	  || FarmName <-Farms],
-	{ok, State#state{status = initialized}}.
+	{ok, State#consumer_state{status = initialized}}.
 
 
 create_rabbit_farm_model(FarmName, FarmOptions) when is_list(FarmOptions)->

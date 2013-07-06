@@ -40,18 +40,18 @@
         terminate/2, code_change/3]).
 
 start_()->
-    ok = application:start(syntax_tools),
-    ok = application:start(compiler),
-    ok = application:start(goldrush),
+    ok = app_util:start_app(syntax_tools),
+    ok = app_util:start_app(compiler),
+    ok = app_util:start_app(goldrush),
     ok = lager:start(),
-    ok = application:start(gen_server2),
-    ok = application:start(rabbit_common),
-    ok = application:start(amqp_client),
-    ok = application:start(crypto),
-    ok = application:start(?APP).
+    ok = app_util:start_app(gen_server2),
+    ok = app_util:start_app(rabbit_common),
+    ok = app_util:start_app(amqp_client),
+    ok = app_util:start_app(crypto),
+    ok = app_util:start_app(?APP).
 
 start()->
-    ok = application:start(?APP).
+    ok = app_util:start_app(?APP).
 
 stop()->
  	gen_server2:call(?SERVER,{stop, normal}).
