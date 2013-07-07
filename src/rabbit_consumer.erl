@@ -128,8 +128,7 @@ load_state()->
 	ok.
 
 handle_call({connect}, _From, State)->
-	
-	
+ 
 	{reply, {ok, State}, State};
 
 handle_call({reconnect}, _From, State)->
@@ -137,7 +136,7 @@ handle_call({reconnect}, _From, State)->
 	{reply, {ok, State}, State};
 
 handle_call({disconnect}, _From, State)->
-
+	true = is_alive(State#connection),
 	{reply, {ok, State}, State};
 
 handle_call({stop, Reason}, From, State)->
@@ -161,12 +160,11 @@ handle_call({ping}, _From, State)->
 
 handle_call({register_callback, Module},
 			 From, State) ->
-	
 	State#consumer_state.transform_module = Module,
 	{reply, ok, State};
 
 handle_call({consume}, From, State)->
- 	Reply = 
+ 	Reply = ope
 	{reply, Reply, State};
 
 handle_call(_Request, _From, State) ->
@@ -356,15 +354,32 @@ call_wrapper(FarmName, Fun)
 
 is_alive(P)->
  	erlang:is_process_alive(P).
-close_channel(true, Close)->
-	close(amqp_channel,Close).
-close_connection(true, Close)->
-	close(amqp_connection,Close).
+open_channel(true, Channel)->
+	open(amqp_channel,Channel).
+open_connection(true, Connection)->
+	open(amqp_connection,Connection).
+open(M) when is_atom(M)->
+	M:open(C);
+open(_) ->
+	ok.
+	
+close_channel(true, Channel)->
+	close(amqp_channel,Channel).
+close_connection(true, Connection)->
+	close(amqp_connection,Connection).
 close(M) when is_atom(M)->
-	ok = M:close(C);
+	M:close(C);
 close(_) ->
 	ok.
 
-get_rest_config()->
 
-	ok.
+
+get_rest_config()->
+	{ok, [ConfList]} = spark_app_config_srv:load_config("spark_rest.config"),
+	
+	#rest_conf{}.
+
+get_amqp_config()->
+	{ok, [ConfList]} = spark_app_config_srv:load_config("spark_amqp.config"),
+
+	#amqp_params_network{}.
