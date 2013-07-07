@@ -45,6 +45,7 @@
         terminate/2, code_change/3]).
 
 start_()->
+	ok = spark_app_config_srv:start(?APP),
     ok = app_util:start_app(syntax_tools),
     ok = app_util:start_app(compiler),
     ok = app_util:start_app(goldrush),
@@ -57,9 +58,11 @@ start_()->
     ok = app_util:start_app(?APP).
 
 start()->
+	ok = spark_app_config_srv:start(?APP),
     ok = app_util:start_app(?APP).
 
 stop()->
+
  	gen_server:call(?SERVER,{stop, normal}).
 
 start_link() ->
@@ -119,6 +122,10 @@ init([]) ->
     	connection = self(),
     	rabbitmq_restart_timeout = ?RECON_TIMEOUT
     }}.
+
+load_state()->
+	
+	ok.
 
 handle_call({connect}, _From, State)->
 	
@@ -358,3 +365,6 @@ close(M) when is_atom(M)->
 close(_) ->
 	ok.
 
+get_rest_config()->
+
+	ok.
