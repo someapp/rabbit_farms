@@ -11,6 +11,7 @@
 -define(DELAY, 10).
 -define(RECON_TIMEOUT, 5000).
 -define(ETS_FARMS,ets_rabbit_farms).
+-define(RESPONSE_TIMEOUT,2000),
 
 -record(consumer_state, {
 		farm_name = [] ::string(),
@@ -110,6 +111,55 @@ register_callback(M, Fun, Arg)->
 	gen_server:call(?SERVER, {register_callback, 
 							  Module}).
 
+
+%% -------------------------------------------------------------------------
+%% Connection methods
+%% -------------------------------------------------------------------------
+-spec connection_start() -> {'ok', pid()} | {'error', any()}.
+connection_start(Amqp_params_network) when is_record(Amqp_params_network,
+								 #amqp_params_network{}) ->
+	amqp_connection:start(Amqp_params_network).
+-spec connection_start() -> {'ok', pid()} | {'error', any()}.
+connection_start() ->
+    Params = #amqp_params_network{virtual_host = just_app:get_env(amqp_vhost),
+                                  username = just_app:get_env(amqp_username),
+                                  password = just_app:get_env(amqp_password),
+                                  host = just_app:get_env(amqp_host),
+                                  port = just_app:get_env(amqp_port)},
+	connection_start(Params).
+
+-spec connection_close(pid()) -> 'ok'.
+connection_close(Conn) ->
+	case is_process_alive(ConPid) of
+		true-> catch(amqp_connection:close(Conn)), ok;
+		_ -> ok
+    end.
+-spec connection_close(pid()) -> 'ok'.
+connection_close(Conn, Timeout) ->
+	case is_process_alive(ConPid) of
+		true-> catch(amqp_connection:close(Conn, Timeout)), ok;
+		_ -> ok
+    end.
+
+%% -------------------------------------------------------------------------
+%% Channel methods
+%% -------------------------------------------------------------------------
+
+-spec channel_open(pid()) -> {'ok', pid()} | {'error', any()}.
+channel_open(ChanPid) ->
+	case is_process_alive(ChanPid) of
+		true-> catch(amqp_connection:channel_open(ChanPid)), ok;
+		_ -> ok
+    end.
+
+-spec channel_close(pid()) -> {'ok', pid()} | {'error', any()}.
+channel_close(ChanPid) ->
+	case is_process_alive(ChanPid) of
+		true-> catch(amqp_connection:close_channel(ChanPid)), ok;
+		_ -> ok
+    end.
+
+
 -spec qos(pid(), non_neg_integer()) -> 'ok' | {'error', any()}.
 qos(Chan, PrefetchCount) ->
     Method = #'basic.qos'{prefetch_count = PrefetchCount},
@@ -120,17 +170,16 @@ qos(Chan, PrefetchCount) ->
         _:Reason -> {error, Reason}
     end.
 
--spec publish(pid(), binary(), #'P_basic'{}, binary()) ->
-    ok | {error, noproc | closing}.
-publish(Channel, Payload, Properties, RoutingKey) ->
-    Method = #'basic.publish'{routing_key = RoutingKey},
-    Content = #amqp_msg{props = Properties, payload = Payload},
-    try amqp_channel:call(Channel, Method, Content) of
-        ok      -> ok;
-        closing -> {error, closing}
-    catch
-        _:{noproc, _} -> {error, noproc}
-    end.
+%    ok | {error, noproc | closing}.
+%publish(Channel, Payload, Properties, RoutingKey) ->
+%    Method = #'basic.publish'{routing_key = RoutingKey},
+%    Content = #amqp_msg{props = Properties, payload = Payload},
+%    try amqp_channel:call(Channel, Method, Content) of
+%        ok      -> ok;
+%        closing -> {error, closing}
+%    catch
+%        _:{noproc, _} -> {error, noproc}
+%    end.
 
 -spec ack(pid(), integer()) -> ok | {error, noproc | closing}.
 ack(Channel, DeliveryTag) ->
@@ -149,7 +198,7 @@ subscribe(Channel, Queue) ->
     receive
         #'basic.consume_ok'{consumer_tag = CTag} -> {ok, CTag}
     after
-        2000 -> error
+        ?RESPONSE_TIMEOUT -> {error, timeout}
     end.
 
 -spec unsubscribe(pid(), binary()) -> ok | error.
@@ -159,7 +208,7 @@ unsubscribe(Channel, CTag) ->
     receive
         #'basic.cancel_ok'{consumer_tag = CTag} -> ok
     after
-        2000 -> error
+        ?RESPONSE_TIMEOUT -> {error, timeout}
     end.
 
 %% -------------------------------------------------------------------------
@@ -197,8 +246,9 @@ confirm_select(Channel) ->
 %%%===================================================================
 
 init([]) ->
+ 	process_flag(trap_exit, true),
+ 	lager:log(info,"Initializing rabbit consumer client"),
     erlang:send_after(?DELAY, self(), {init}),
- 	
     {ok, #consumer_state{
     	connection = self(),
     	rabbitmq_restart_timeout = ?RECON_TIMEOUT
@@ -206,19 +256,30 @@ init([]) ->
 
 load_state()->
 	
-	ok.
+
+	#consumer_state{
+
+	}.
 
 handle_call({connect}, _From, State)->
- 
-	{reply, {ok, State}, State};
+ 	{ok, ConPid} = connection_start(State#amqp_params_network),
+	{reply, ConPid, 
+		State#consumer_state{connection=ConPid}};
 
 handle_call({reconnect}, _From, State)->
-
+	
 	{reply, {ok, State}, State};
 
 handle_call({disconnect}, _From, State)->
-	true = is_alive(State#connection),
-	{reply, {ok, State}, State};
+	ok = close_channel(State#consumer_state.channel),
+	ok = close_connection(State#consumer_state.connection),
+	{reply, {ok, disconnected}, 
+		State#consumer_state{
+		connection = undef, 
+		connection_ref = undef,
+		channel = undef,
+		channel_ref =undef}
+	};
 
 handle_call({stop, Reason}, From, State)->
  	error_logger:info_msg("Rabbit Consumers stopping with reason ~p ",[Reason]),
@@ -375,9 +436,9 @@ delete_rabbit_farm_instance(FarmName, FarmOptions)->
 		 		true->
 				 	ChannelSize  = orddict:size(Channels),
 				 	error_logger:info_msg("Closing ~p channels ~p~n",[RabbitFarm, Channels]),
-				 	orddict:map(fun(_,C)-> amqp_channel:close(C) end, Channels),
+				 	orddict:map(fun(_,C)-> close_channel(C) end, Channels),
 					error_logger:info_msg("Closing amqp connection ~p~n",[Connection]),
-				 	amqp_connection:close(Connection, 3);
+				 	close_connection(Connection, 3);
 				false->
 					error_logger:error_msg("The farm ~p died~n",[FarmName]),
 					{error, farm_died}
@@ -445,25 +506,6 @@ call_wrapper(FarmName, Fun)
 
 is_alive(P)->
  	erlang:is_process_alive(P).
-open_channel(true, Channel)->
-	open(amqp_channel,Channel).
-open_connection(true, Connection)->
-	open(amqp_connection,Connection).
-open(M) when is_atom(M)->
-	M:open(C);
-open(_) ->
-	ok.
-	
-close_channel(true, Channel)->
-	close(amqp_channel,Channel).
-close_connection(true, Connection)->
-	close(amqp_connection,Connection).
-close(M) when is_atom(M)->
-	M:close(C);
-close(_) ->
-	ok.
-
-
 
 get_rest_config()->
 	{ok, [ConfList]} = spark_app_config_srv:load_config("spark_rest.config"),
