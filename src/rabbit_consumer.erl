@@ -110,6 +110,87 @@ register_callback(M, Fun, Arg)->
 	gen_server:call(?SERVER, {register_callback, 
 							  Module}).
 
+-spec qos(pid(), non_neg_integer()) -> 'ok' | {'error', any()}.
+qos(Chan, PrefetchCount) ->
+    Method = #'basic.qos'{prefetch_count = PrefetchCount},
+    try amqp_channel:call(Chan, Method) of
+        #'basic.qos_ok'{} -> ok;
+        Other             -> {error, Other}
+    catch
+        _:Reason -> {error, Reason}
+    end.
+
+-spec publish(pid(), binary(), #'P_basic'{}, binary()) ->
+    ok | {error, noproc | closing}.
+publish(Channel, Payload, Properties, RoutingKey) ->
+    Method = #'basic.publish'{routing_key = RoutingKey},
+    Content = #amqp_msg{props = Properties, payload = Payload},
+    try amqp_channel:call(Channel, Method, Content) of
+        ok      -> ok;
+        closing -> {error, closing}
+    catch
+        _:{noproc, _} -> {error, noproc}
+    end.
+
+-spec ack(pid(), integer()) -> ok | {error, noproc | closing}.
+ack(Channel, DeliveryTag) ->
+    Method = #'basic.ack'{delivery_tag = DeliveryTag, multiple = false},
+    try amqp_channel:call(Channel, Method) of
+        ok      -> ok;
+        closing -> {error, closing}
+    catch
+        _:{noproc, _} -> {error, noproc}
+    end.
+
+-spec subscribe(pid(), binary()) -> {ok, binary()} | error.
+subscribe(Channel, Queue) ->
+    Method = #'basic.consume'{queue = Queue, no_ack = false},
+    amqp_channel:subscribe(Channel, Method, self()),
+    receive
+        #'basic.consume_ok'{consumer_tag = CTag} -> {ok, CTag}
+    after
+        2000 -> error
+    end.
+
+-spec unsubscribe(pid(), binary()) -> ok | error.
+unsubscribe(Channel, CTag) ->
+    Method = #'basic.cancel'{consumer_tag = CTag},
+    amqp_channel:call(Channel, Method),
+    receive
+        #'basic.cancel_ok'{consumer_tag = CTag} -> ok
+    after
+        2000 -> error
+    end.
+
+%% -------------------------------------------------------------------------
+%% queue functions
+%% -------------------------------------------------------------------------
+
+-spec declare_queue(pid(), binary()) -> ok.
+declare_queue(Channel, Queue) ->
+    Method = #'queue.declare'{queue = Queue, durable = true},
+    #'queue.declare_ok'{} = amqp_channel:call(Channel, Method),
+    ok.
+
+-spec declare_queue(pid(), binary(), boolean(), boolean(), boolean()) -> ok.
+declare_queue(Channel, Queue, Durable, Exclusive, Autodelete) ->
+    Method = #'queue.declare'{
+		queue = Queue,
+		durable = Durable,
+		exclusive = Exclusive,
+		auto_delete = Autodelete},
+    #'queue.declare_ok'{} = amqp_channel:call(Channel, Method),
+    ok.
+
+%% -------------------------------------------------------------------------
+%% confirm functions
+%% -------------------------------------------------------------------------
+
+-spec confirm_select(pid()) -> ok.
+confirm_select(Channel) ->
+    Method = #'confirm.select'{},
+    #'confirm.select_ok'{} = amqp_channel:call(Channel, Method),
+    ok.
 
 %%%===================================================================
 %%% gen_server callbacks
@@ -180,18 +261,27 @@ handle_info({#'basic.consume_ok'{}}, State)->
 handle_info({#'basic.cancel_ok'{}}, State)->
 	{reply, ok, State};
 handle_info({#'basic.deliver'{consumer_tag = Tag},
-			 #amqp_msg{payload = Msg}}, State
+			 Content}, State
 			) ->
-    Reply = try 
-    	Message = binary_to_term(Msg),
-    	consume_carrot_from_rabbit(Message, State),
-    	rabbit_farm_util:get_fun(cast, #'basic.ack'{delivery_tag = Tag}, [])
-	catch
-		C:R -> lager:log(error,"Cannot parse message"), 
-			   {C, R}
-	end,
-	{reply, Reply, State};
+    #amqp_msg{payload = Payload, props = Props} = Content,
+    #'P_basic'{
+    	content_type = ContentType,
+    	message_id = MsgId,
+    	reply-to = ReplyTo,
+    	timestamp = TimeStamp
+    } = Props,
+    {ResponsePayload, ResponstType} = process_message(ContentType, Payload, 
+    								  State#consumer_state.transform_module),
+	{reply, {ResponsePayload, ResponstType} , State};
 
+handle_info({'EXIT', Pid, Reason}, State)->
+	lager:log(error , "amqp connection (~p) down ",[State#consumer_state.connection]),
+	{noreply, State#consumer_state{
+		connection = undef, 
+		connection_ref = undef,
+		channel = undef,
+		channel_ref =undef}
+	}.
 handle_info({init}, State) ->
 	ets:new(?ETS_FARMS,[protected, named_table, 
 		   {keypos, #rabbit_farm.farm_name},
@@ -297,11 +387,12 @@ delete_rabbit_farm_instance(FarmName, FarmOptions)->
 		 	{warn, farm_not_exist}
 	end.
 
+process_message(chat,Payload, Module)->
+	{ResponstType, ResponsePayload} = Module:process_message(Payload),
+	{ResponstType, ResponsePayload}.
 
-consume_carrot_from_rabbit(Message, State)->
-	Cbks = State#rabbit_feeder.callbacks,
-	Ret = lists:map(fun([M,F,Message])-> erlang:apply(M,F,[Message]) end, Cbks),
-	Ret.
+process_message(ContentType, Payload, State)->
+	{unsupported, ContentType}.
 
 subscribe_with_callback(Type, #rabbit_processor {
 								farm_name = FarmName,
@@ -376,10 +467,16 @@ close(_) ->
 
 get_rest_config()->
 	{ok, [ConfList]} = spark_app_config_srv:load_config("spark_rest.config"),
-	
-	#rest_conf{}.
+
+	#rest_conf{
+
+
+	}.
 
 get_amqp_config()->
 	{ok, [ConfList]} = spark_app_config_srv:load_config("spark_amqp.config"),
 
-	#amqp_params_network{}.
+	#amqp_params_network{
+
+
+	}.
