@@ -11,20 +11,24 @@
 -define(DELAY, 10).
 -define(RECON_TIMEOUT, 5000).
 -define(ETS_FARMS,ets_rabbit_farms).
--define(RESPONSE_TIMEOUT,2000),
+-define(RESPONSE_TIMEOUT,2000).
+
+-define(AMQP_CONF, "spark_amqp.config").
+-define(REST_CONF, "spark_rest.config").
 
 -record(consumer_state, {
 		farm_name = [] ::string(),
-		status = uninitialized  :: initialized | uninitialized,
+%		status = uninitialized  :: initialized | uninitialized,
+		consumer_pid :: pid(),
 		connection :: pid(),
 		connection_ref ::reference(),
 		channel :: pid(),
 		channel_ref :: reference(),
 		transform_module :: module(),
-		rabbitmq_restart_timeout = 5000 :: pos_integer(), % restart timeout
+		restart_timeout = 5000 :: pos_integer(), % restart timeout
 		amqp_params = #amqp_params_network{} ::#amqp_params_network{},
-		rest_params = #rest_conf{} ::#rest_conf{},
-		retry_strategy = undef ::atom()
+		rest_params = #rest_conf{} ::#rest_conf{}
+%		retry_strategy = undef ::atom()
 }).
 
 %% API
@@ -37,7 +41,6 @@
 		reconnect/0,
 		disconnect/0,
 		subscribe/2,
-		consume/3,
 		register_callback/1
 ]).
 
@@ -63,7 +66,6 @@ start()->
     ok = app_util:start_app(?APP).
 
 stop()->
-
  	gen_server:call(?SERVER,{stop, normal}).
 
 start_link() ->
@@ -87,29 +89,17 @@ reconnect()->
 disconnect()->
 	gen_server:call(?SERVER, {disconnect}).
 
-consume(call, Mod, Func) when is_atom(Mod),
-						is_atom(Func)->
+subscribe(call, Mod) 
+			when is_atom(Mod) ->
+	gen_server:call(?SERVER, {subscribe, Mod});
 
-	gen_server:call(?SERVER, {consume, Mod, Func});
+subscribe(cast, Mod) 
+			when is_atom(Mod) ->
+	gen_server:cast(?SERVER, {subscribe, Mod}).
 
-
-consume(cast, Mod, Func) when is_atom(Mod),
-						is_atom(Func)->
-
-	gen_server:cast(?SERVER, {consume, Mod, Func}).
-
-
-subscribe(call, Subscription) 
-			when is_record(Subscription, rabbit_processor) ->
-	gen_server:call(?SERVER, {subscribe, Subscription});
-
-subscribe(cast, Subscription) 
-			when is_record(Subscription, rabbit_processor) ->
-	gen_server:cast(?SERVER, {subscribe, Subscription}).
-
-register_callback(M, Fun, Arg)->
+register_callback(Mod)->
 	gen_server:call(?SERVER, {register_callback, 
-							  Module}).
+							  Mod}).
 
 
 %% -------------------------------------------------------------------------
@@ -169,17 +159,6 @@ qos(Chan, PrefetchCount) ->
     catch
         _:Reason -> {error, Reason}
     end.
-
-%    ok | {error, noproc | closing}.
-%publish(Channel, Payload, Properties, RoutingKey) ->
-%    Method = #'basic.publish'{routing_key = RoutingKey},
-%    Content = #amqp_msg{props = Properties, payload = Payload},
-%    try amqp_channel:call(Channel, Method, Content) of
-%        ok      -> ok;
-%        closing -> {error, closing}
-%    catch
-%        _:{noproc, _} -> {error, noproc}
-%    end.
 
 -spec ack(pid(), integer()) -> ok | {error, noproc | closing}.
 ack(Channel, DeliveryTag) ->
@@ -251,7 +230,7 @@ init([]) ->
     erlang:send_after(?DELAY, self(), {init}),
     {ok, #consumer_state{
     	connection = self(),
-    	rabbitmq_restart_timeout = ?RECON_TIMEOUT
+    	restart_timeout = ?RECON_TIMEOUT
     }}.
 
 load_state()->
@@ -286,10 +265,10 @@ handle_call({stop, Reason}, From, State)->
 	Reply = terminate(Reason, State),
 	{reply, Reply, State};
 
-handle_call({subscribe, Subscription}, From, State) 
-					when is_record(Subscription, rabbit_processor)->
+handle_call({subscribe, Mod}, From, State) 
+					when is_atom(Mod)->
     spawn(fun()-> 
-     		 Reply = subscribe_with_callback(call, Subscription),
+     		 Reply = subscribe_with_callback(call, Mod),
      		 gen_server:reply(From, Reply)
     	 end),
     {noreply, State};
@@ -359,18 +338,8 @@ code_change(_OldVsn, State, _Extra) ->
     {ok, State}.
 
 terminate(Reason, State) ->
-	{ok, Farms} = application:get_env(?APP, rabbit_farms),
-	error_logger:info_msg("Terminate farms ~p ",[Farms]),
-	[ begin
-		FarmNodeName      = ?TO_FARM_NODE_NAME(FarmName),
-		{ok, FarmOptions} = application:get_env(?APP, FarmNodeName),
-		error_logger:info_msg("Terminate Options FarmName ~p Opts ~p~n",[FarmNodeName, FarmOptions]),
-		delete_rabbit_farm_instance(FarmName, FarmNodeName)
-	  end
-	  || FarmName <-Farms],
-	error_logger:info_msg("Terminated farms ~p ",[Farms]),
-    ok.
-
+	gen_server:call(?SERVER, {disconnect}),
+	ok.
 
 init_rabbit_farm(State)->
 	{ok, Farms} = application:get_env(?APP, rabbit_farms),
