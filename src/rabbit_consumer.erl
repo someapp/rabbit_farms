@@ -325,6 +325,7 @@ handle_call({subscribe}, From, State)->
 	declare_queue(ChanPid, Queue, Durable, Exclusive, Autodelete),
 	bind_queue(ChanPid, Queue, Exchange, RoutingKey),
  	Reply = do_subscribe(ChanPid,Queue),
+ 	error_logger:info_msg("handle subscribe ok",[]),
 	{reply, Reply, State};
 
 handle_call(_Request, _From, State) ->
