@@ -336,11 +336,11 @@ handle_cast(Info, State) ->
 	erlang:display(Info),
     {noreply, State}.
 
-handle_info({'basic.consume_ok'{}}, State)->
+handle_info({#'basic.consume_ok'{}}, State)->
 	{reply, ok, State};
-handle_info({'basic.cancel_ok'{}}, State)->
+handle_info({#'basic.cancel_ok'{}}, State)->
 	{reply, ok, State};
-handle_info({'basic.deliver'
+handle_info({#'basic.deliver'
 			  {consumer_tag = CTag,
 			   delivery_tag = DTag,
 			   redelivered = Redelivered,
@@ -359,6 +359,14 @@ handle_info({'basic.deliver'
     {ResponsePayload, ResponstType} = process_message(ContentType, Payload, 
     								  State#consumer_state.transform_module),
 	{reply, {ResponsePayload, ResponstType} , State};
+
+handle_info({Any,
+			 Content}, State
+			) ->
+	error_logger:info("Any message ~p~n, Any conntent ~p~n",[Any, Content]),
+	{reply, ok , State};
+
+
 
 handle_info({'EXIT', Pid, Reason}, State)->
 	error_logger:error("amqp connection (~p) down ",[State#consumer_state.connection]),
