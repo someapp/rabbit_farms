@@ -373,14 +373,15 @@ get_rest_config(Rest_ConfList)->
 -spec get_amqp_config(list()) ->#'amqp_params_network'{}.
 get_amqp_config(FarmOptions) ->
 	UserName    = proplists:get_value(username,FarmOptions,<<"guest">>),
-	Password    = proplists:get_value(password,FarmOptions,<<"V2pOV2JHTXpVVDA9">>),
+	SecPassword    = proplists:get_value(password,FarmOptions,<<"V2pOV2JHTXpVVDA9">>),
 	true = password:is_secure(Password),
 	VirtualHost = proplists:get_value(virtual_host,FarmOptions,<<"/">>),
 	Host        = proplists:get_value(host,FarmOptions,"localhost"),
 	Port        = proplists:get_value(port,FarmOptions,5672),
+
 	#amqp_params_network{
 				username     = rabbit_farm_util:ensure_binary(UserName),
-				password     = Password,
+				password     = password:decode_password(SecPassword),
 				virtual_host = rabbit_farm_util:ensure_binary(VirtualHost),
 				host         = Host,
 				port         = Port
