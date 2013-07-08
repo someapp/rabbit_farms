@@ -104,14 +104,14 @@ connection_start(Amqp_params_network)
 	amqp_connection:start(Amqp_params_network).
 
 -spec connection_close(pid()) -> 'ok'.
-connection_close(undef) -> ok;
+connection_close(undef) -> undef;
 connection_close(ConPid) ->
 	case is_alive(ConPid) of
 		true-> amqp_connection:close(ConPid);
 		Why -> Why
     end.
 -spec connection_close(pid(), pos_integer()) -> 'ok'.
-connection_close(undef, _) ->ok;
+connection_close(undef, _) -> undef;
 connection_close(ConPid, Timeout) ->
 	case is_alive(ConPid) of
 		true-> amqp_connection:close(ConPid, Timeout);
