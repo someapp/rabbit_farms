@@ -24,6 +24,7 @@
 -export([
 		connect/0,
 		open_channel/0,
+		close_channel/0,
 		reconnect/0,
 		disconnect/0,
 		subscribe/2,
@@ -74,6 +75,7 @@ open_channel()->
 
 close_channel()->
 	gen_server:call(?SERVER, {close_channel}).
+	
 reconnect()->
 	gen_server:call(?SERVER, {reconnect}).
 
