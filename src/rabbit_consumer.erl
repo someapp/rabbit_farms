@@ -190,7 +190,7 @@ declare_queue(Channel, Queue, Durable, Exclusive, Autodelete) ->
 		durable = Durable,
 		exclusive = Exclusive,
 		auto_delete = Autodelete},
-    #{'queue.declare_ok', _, _, _} = amqp_channel:call(Channel, Method),
+    {'queue.declare_ok', _, _, _} = amqp_channel:call(Channel, Method),
     ok.
 
 bind_queue(Channel)->
@@ -231,7 +231,7 @@ init([]) ->
     R.
 
 handle_call({connect}, _From, State)->
- 	{ok, ConPid} = connection_start(State#amqp_params_network),
+ 	{ok, ConPid} = connection_start(State#consumer_state.amqp_params),
 	{reply, ConPid, 
 		State#consumer_state{connection=ConPid}};
 
@@ -276,7 +276,6 @@ handle_call({subscribe}, From, State)->
 					routing_key = RoutingKey
 
 				} = get_queue_binding_config(),
-
  	Reply = subscribe(ChanPid,Queue),
 	{reply, Reply, State};
 
@@ -299,7 +298,7 @@ handle_info({#'basic.deliver'{consumer_tag = Tag},
     #'P_basic'{
     	content_type = ContentType,
     	message_id = MsgId,
-    	reply-to = ReplyTo,
+    	reply_to = ReplyTo,
     	timestamp = TimeStamp
     } = Props,
     {ResponsePayload, ResponstType} = process_message(ContentType, Payload, 
@@ -319,7 +318,7 @@ handle_info({init}, State)->
 	lager:log(info , "Setting up initial connection, channel, and queue"),
 	connect(),
 	queue_declare(),
-	queue_bind()
+	queue_bind(),
 	{noreply, State#consumer_state{
 		connection = undef, 
 		connection_ref = undef,
@@ -364,7 +363,7 @@ get_rest_config()->
               spark_app_config_srv:lookup(spark_create_oauth_accesstoken),
     	auth_profile_miniProfile = spark_app_config_srv:lookup(auth_profile_miniProfile),
     	profile_memberstatus = spark_app_config_srv:lookup(profile_memberstatus),
-    	community2brandId = spark_app_config_srv:lookup(community2brandId),
+    	community2brandId = spark_app_config_srv:lookup(community2brandId)
   	}.
 
 get_amqp_config()->
@@ -376,21 +375,21 @@ get_amqp_config()->
 
 
 get_exhange_config()_>
-	{ok, [Amqp_params]} = spark_app_config_srv:lookup(amqp_param, required)
+	{ok, [Amqp_params]} = spark_app_config_srv:lookup(amqp_param, required),
 	rabbit_farms_config:get_exchange_setting(Amqp_params).
 
 get_queue_config() ->
-	{ok, [Amqp_params]} = spark_app_config_srv:lookup(amqp_param, required)
+	{ok, [Amqp_params]} = spark_app_config_srv:lookup(amqp_param, required),
 	rabbit_farms_config:get_queue_setting(Amqp_params).
 
 get_queue_binding_config()-> 
-	{ok, [Amqp_params]} = spark_app_config_srv:lookup(amqp_param, required)
+	{ok, [Amqp_params]} = spark_app_config_srv:lookup(amqp_param, required),
 	rabbit_farms_config:get_queue_bind(Amqp_params).
 
 get_channel_pid(State)->
 	ConPid = case is_alive(State#rabbit_consumer.connection) of
  		true -> State#rabbit_consumer.connection;
- 		Else -> erlang:send_after(?DELAY, self(), {connect}),
+ 		Else -> erlang:send_after(?DELAY, self(), {connect})
  	end,
  	 
  	case is_alive(ConPid) of
