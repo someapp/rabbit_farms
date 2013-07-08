@@ -23,3 +23,7 @@ test4(Message,M,F)->
 test5(Message,M,F)->
    erlang:apply(M,F,[Message]),
    {ok, Message, M, F}. 
+
+process_message(Message)->
+   io:format("Processed Message ~p",[Message]),
+   {ok, message_processed}.
