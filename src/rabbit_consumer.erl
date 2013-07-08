@@ -359,15 +359,15 @@ is_alive(P)->
 
 get_rest_config(Rest_ConfList)->
    	#spark_restc_config {
-    	spark_api_endpoint = proplists:get_value(Rest_ConfList, spark_api_endpoint),
-   	 	spark_app_id = proplists:get_value(Rest_ConfList, spark_app_id),
-    	spark_brand_id = proplists:get_value(Rest_ConfList, spark_brand_id),
-    	spark_client_secret = proplists:get_value(Rest_ConfList, spark_client_secret),
+    	spark_api_endpoint = proplists:get_value(spark_api_endpoint, Rest_ConfList),
+   	 	spark_app_id = proplists:get_value(spark_app_id, Rest_ConfList),
+    	spark_brand_id = proplists:get_value(spark_brand_id, Rest_ConfList),
+    	spark_client_secret = proplists:get_value(spark_client_secret, Rest_ConfList),
     	spark_create_oauth_accesstoken =
-              proplists:get_value(Rest_ConfList, spark_create_oauth_accesstoken),
-    	auth_profile_miniProfile = proplists:get_value(Rest_ConfList, auth_profile_miniProfile),
-    	profile_memberstatus = proplists:get_value(Rest_ConfList, profile_memberstatus),
-    	community2brandId = sproplists:get_value(Rest_ConfList, community2brandId)
+              proplists:get_value(spark_create_oauth_accesstoken, Rest_ConfList),
+    	auth_profile_miniProfile = proplists:get_value(auth_profile_miniProfile, Rest_ConfList),
+    	profile_memberstatus = proplists:get_value(profile_memberstatus, Rest_ConfList),
+    	community2brandId = sproplists:get_value(community2brandId, Rest_ConfList),
   	}.
 
 -spec get_amqp_config(list()) ->#'amqp_params_network'{}.
