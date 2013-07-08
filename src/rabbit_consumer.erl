@@ -268,8 +268,8 @@ handle_call({close_channel}, _From, State)->
  	ConPid = State#consumer_state.connection,
  	error_logger:info_msg("Connection Pid ~p, is_alive? ~p",
  		[ConPid, is_process_alive(ConPid)]),
- 	{ok, ChanPid} = channel_close(ConPid),
- 	error_logger:info_msg("Closed Channel",[]),
+ 	R = channel_close(ConPid),
+ 	error_logger:info_msg("Closed Channel: Ret: ~p",[R]),
 	{reply, ChanPid, 
 		State#consumer_state{channel=undef}};		
 
@@ -279,10 +279,10 @@ handle_call({reconnect}, _From, State)->
 
 handle_call({disconnect}, _From, State)->
 	error_logger:info_msg("Disconnecting ....",[]),
-	ok = channel_close(State#consumer_state.channel),
-	error_logger:info_msg("Disconnected Channel",[]),
-	ok = connection_close(State#consumer_state.connection),
-	error_logger:info_msg("Disconnected Connection",[]),
+	R1 = channel_close(State#consumer_state.channel),
+	error_logger:info_msg("Disconnected Channel ~p",[R1]),
+	R2 = connection_close(State#consumer_state.connection),
+	error_logger:info_msg("Disconnected Connection ~p",[R2]),
 	{reply, {ok, disconnected}, 
 		State#consumer_state{
 		connection = undef, 
