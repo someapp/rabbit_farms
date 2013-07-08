@@ -1,6 +1,6 @@
 -module(test,[Name, Fun]).
 
--export([test1/1,test2/2, test3/2, test4/3, test5/3]).
+-export([test1/1,test2/2, test3/2, test4/3, test5/3, process_message/1]).
 
 
 test1(Message)->
