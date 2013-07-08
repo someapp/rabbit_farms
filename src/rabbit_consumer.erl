@@ -28,7 +28,6 @@
 		reconnect/0,
 		disconnect/0,
 		subscribe/1,
-		subscribe/2,
 		register_callback/1
 ]).
 
@@ -157,7 +156,7 @@ ack(Channel, DeliveryTag) ->
         _:{noproc, _} -> {error, noproc}
     end.
 
--spec subscribe(pid(), binary()) -> {ok, binary()} | error.
+-spec subscribe(pid()) -> {ok, binary()} | error.
 do_subscribe(Channel, Queue) ->
     Method = #'basic.consume'{queue = Queue, no_ack = false},
     amqp_channel:subscribe(Channel, Method, self()),
