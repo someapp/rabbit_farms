@@ -214,7 +214,8 @@ confirm_select(Channel) ->
 
 init([]) ->
  	process_flag(trap_exit, true),
- 	lager:log(info,"Initializing rabbit consumer client"),
+ 	error_logger:info_msg("Initializing rabbit consumer client"),
+% 	lager:log(info,"Initializing rabbit consumer client"),
     erlang:send_after(?DELAY, self(), {init}),
     R = {ok, #consumer_state{
     	connection = self(),
