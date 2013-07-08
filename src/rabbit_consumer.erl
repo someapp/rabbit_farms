@@ -123,7 +123,7 @@ connection_close(ConPid, Timeout) ->
 %% -------------------------------------------------------------------------
 
 -spec channel_open(pid()) -> {'ok', pid()} | {'error', any()}.
-channel_open(undef) -> chanel_not_opened;
+channel_open(undef) -> undef;
 channel_open(ConPid) ->
 	case is_alive(ConPid) of
 		true-> amqp_connection:open_channel(ConPid);
@@ -262,8 +262,8 @@ handle_call({open_channel}, _From, State)->
  	ConPid = State#consumer_state.connection,
  	error_logger:info_msg("Connection Pid ~p, is_alive? ~p",
  		[ConPid, is_alive(ConPid)]),
- 	{ok, ChanPid} = channel_open(ConPid),
- 	error_logger:info_msg("Connected Channel ~p",[ChanPid]),
+ 	R = channel_open(ConPid),
+ 	error_logger:info_msg("Connected Channel ~p",[R]),
 	{reply, ChanPid, 
 		State#consumer_state{channel=ChanPid}};		
 
