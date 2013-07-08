@@ -72,6 +72,8 @@ connect()->
 open_channel()->
 	gen_server:call(?SERVER, {connect_channel}).
 
+close_channel()->
+	gen_server:call(?SERVER, {close_channel}).
 reconnect()->
 	gen_server:call(?SERVER, {reconnect}).
 
@@ -259,6 +261,15 @@ handle_call({connect_channel}, _From, State)->
  	error_logger:info_msg("Connected Channel",[]),
 	{reply, ChanPid, 
 		State#consumer_state{channel=ChanPid}};		
+
+handle_call({close_channel}, _From, State)->
+ 	ConPid = State#consumer_state.connection,
+ 	error_logger:info_msg("Connection Pid ~p, is_alive? ~p",
+ 		[ConPid, is_process_alive(ConPid)]),
+ 	{ok, ChanPid} = channel_close(ConPid),
+ 	error_logger:info_msg("Closed Channel",[]),
+	{reply, ChanPid, 
+		State#consumer_state{channel=undef}};		
 
 handle_call({reconnect}, _From, State)->
 	
