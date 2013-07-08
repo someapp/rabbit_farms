@@ -25,7 +25,7 @@ start_link(RabbitFarmModel) ->
 -spec init(list())-> {ok, term()} | {error, term()}.
 init([RabbitFarmModel]) ->
 	#consumer_state{farm_name = FarmName} = RabbitFarmModel,
-	ConfDir, = "./conf",
+	ConfDir = "./conf",
 	FileName = "spark_consumer.config"
     Children = [
     		?CHILD(spark_app_config_sup, spark_app_config_sup,supervisor,[ConfDir, FileName]),
