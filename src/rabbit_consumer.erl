@@ -363,12 +363,12 @@ handle_info({#'basic.deliver'
 handle_info({Any,
 			 Content}, State
 			) ->
-	error_logger:info("Any message ~p~n, Any conntent ~p~n",[Any, Content]),
+	error_logger:info_msg("Any message ~p~n, Any conntent ~p~n",[Any, Content]),
 	{reply, ok , State};
 
 handle_info({Any}, State
 			) ->
-	error_logger:info("Any message ~p~n",[Any]),
+	error_logger:info_msg("Any message ~p~n",[Any]),
 	{reply, ok , State};
 
 handle_info({'DOWN', _MRef, process, Pid, Info}, State) ->
