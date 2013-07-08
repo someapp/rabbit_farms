@@ -221,7 +221,7 @@ init([]) ->
     	rest_params = get_rest_config(),
     	amqp_params = get_amqp_config(),
     	exchange = spark_app_config_srv:lookup(exchange, <<"im.conversation">>),
-    	queue_name = spark_app_config_srv:lookup(queue, <<"chat">>),
+    	queue = spark_app_config_srv:lookup(queue, <<"chat">>),
     	routing_key = spark_app_config_srv:lookup(routing_key, <<"spark.chat">>),
     	durable = spark_app_config_srv:lookup(durable, false),
     	transform_module = spark_app_config_srv:lookup(transform_module, required),
@@ -267,7 +267,7 @@ handle_call({register_callback, Module},
 	{reply, ok, State};
 
 handle_call({subscribe}, From, State)->
-	ConPid = State#rabbit_consumer.connection,
+	ConPid = State#consumer_state.connection,
 	{ok, ChanPid} = channel_open(ConPid),
 	declare_queue(ChanPid),
 	bind_queue(ChanPid), 
@@ -313,7 +313,7 @@ handle_info({'EXIT', Pid, Reason}, State)->
 		connection_ref = undef,
 		channel = undef,
 		channel_ref =undef}
-	}.
+	};
 
 handle_info({init}, State)->
 	lager:log(info , "Setting up initial connection, channel, and queue"),
@@ -343,7 +343,7 @@ terminate(Reason, State) ->
 
 process_message(chat,Payload, Module)->
 	{ResponstType, ResponsePayload} = Module:process_message(Payload),
-	{ResponstType, ResponsePayload}.
+	{ResponstType, ResponsePayload};
 
 process_message(ContentType, Payload, State)->
 	{unsupported, ContentType}.
@@ -389,13 +389,13 @@ get_queue_binding_config()->
 	rabbit_farms_config:get_queue_bind(Amqp_params).
 
 get_channel_pid(State)->
-	ConPid = case is_alive(State#rabbit_consumer.connection) of
- 		true -> State#rabbit_consumer.connection;
+	ConPid = case is_alive(State#consumer_state.connection) of
+ 		true -> State#consumer_state.connection;
  		Else -> erlang:send_after(?DELAY, self(), {connect})
  	end,
  	 
  	case is_alive(ConPid) of
  		true -> {ok, ChanPid} = channel_open(ConPid),
  				ChanPid;
- 		Else -> {error, Else}
+ 		_Reason -> {error, channel_closed}
  	end.
