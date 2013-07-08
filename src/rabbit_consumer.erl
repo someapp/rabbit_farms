@@ -308,7 +308,7 @@ handle_info({#'basic.deliver'{consumer_tag = Tag},
 	{reply, {ResponsePayload, ResponstType} , State};
 
 handle_info({'EXIT', Pid, Reason}, State)->
-	lager:log(error , "amqp connection (~p) down ",[State#consumer_state.connection]),
+	error_logger:error("amqp connection (~p) down ",[State#consumer_state.connection]),
 	{noreply, State#consumer_state{
 		connection = undef, 
 		connection_ref = undef,
@@ -317,7 +317,7 @@ handle_info({'EXIT', Pid, Reason}, State)->
 	};
 
 handle_info({init}, State)->
-	lager:log(info , "Setting up initial connection, channel, and queue"),
+	error_logger:info_msg("Setting up initial connection, channel, and queue"),
 	{ok, ConPid} = connect(),
 	{ok, ChanPid} = channel_open(ConPid),
  	declare_queue(ChanPid),
