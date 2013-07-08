@@ -75,7 +75,7 @@ open_channel()->
 
 close_channel()->
 	gen_server:call(?SERVER, {close_channel}).
-	
+
 reconnect()->
 	gen_server:call(?SERVER, {reconnect}).
 
@@ -107,13 +107,13 @@ connection_start(Amqp_params_network)
 connection_close(ConPid) ->
 	case is_process_alive(ConPid) of
 		true-> amqp_connection:close(ConPid);
-		_ -> ok
+		Why -> Why
     end.
 -spec connection_close(pid(), pos_integer()) -> 'ok'.
 connection_close(ConPid, Timeout) ->
 	case is_process_alive(ConPid) of
 		true-> amqp_connection:close(ConPid, Timeout);
-		_ -> ok
+		Why-> Why
     end.
 
 %% -------------------------------------------------------------------------
@@ -124,14 +124,14 @@ connection_close(ConPid, Timeout) ->
 channel_open(ChanPid) ->
 	case is_process_alive(ChanPid) of
 		true-> amqp_connection:open_channel(ChanPid);
-		_ -> ok
+		Why -> Why
     end.
 
 -spec channel_close(pid()) -> {'ok', pid()} | {'error', any()}.
 channel_close(ChanPid) ->
 	case is_process_alive(ChanPid) of
 		true-> amqp_channel:close(ChanPid);
-		_ -> ok
+		Why -> Why
     end.
 
 
