@@ -27,6 +27,7 @@
 		close_channel/0,
 		reconnect/0,
 		disconnect/0,
+		subscribe/1,
 		subscribe/2,
 		register_callback/1
 ]).
@@ -82,13 +83,11 @@ reconnect()->
 disconnect()->
 	gen_server:call(?SERVER, {disconnect}).
 
-subscribe(call, Mod) 
-			when is_atom(Mod) ->
-	gen_server:call(?SERVER, {subscribe, Mod});
+subscribe(call)  ->
+	gen_server:call(?SERVER, {subscribe});
 
-subscribe(cast, Mod) 
-			when is_atom(Mod) ->
-	gen_server:cast(?SERVER, {subscribe, Mod}).
+subscribe(cast) ->
+	gen_server:cast(?SERVER, {subscribe}).
 
 register_callback(Mod)->
 	gen_server:call(?SERVER, {register_callback, 
@@ -161,7 +160,6 @@ ack(Channel, DeliveryTag) ->
 -spec subscribe(pid(), binary()) -> {ok, binary()} | error.
 do_subscribe(Channel, Queue) ->
     Method = #'basic.consume'{queue = Queue, no_ack = false},
-
     amqp_channel:subscribe(Channel, Method, self()),
     receive
         #'basic.consume_ok'{consumer_tag = CTag} -> {ok, CTag}
@@ -241,11 +239,8 @@ init([]) ->
     	queue = proplists:get_value(queue,Feeder_ConfList, <<"chat">>),
     	routing_key = proplists:get_value(routing_key,Feeder_ConfList, <<"spark.chat">>),
     	durable = proplists:get_value(durable,Feeder_ConfList, false),
- 
-	
-		exclusive = proplists:get_value(exclusive,Feeder_ConfList, false),
+ 		exclusive = proplists:get_value(exclusive,Feeder_ConfList, false),
 		auto_delete = proplists:get_value(auto_delete,Feeder_ConfList,false),
-
     	transform_module = proplists:get_value(transform_module, ConfList, undef),
     	restart_timeout = proplists:get_value(restart_timeout, ConfList, ?RECON_TIMEOUT)
 
@@ -313,7 +308,8 @@ handle_call({register_callback, Module},
 
 handle_call({subscribe}, From, State)->
 	ConPid = State#consumer_state.connection,
-	{ok, ChanPid} = channel_open(ConPid),
+	ChanPid = State#consumer_state.channel,
+%	{ok, ChanPid} = channel_open(ConPid),
 	Queue = State#consumer_state.queue,
 	Exchange = State#consumer_state.exchange,
 	RoutingKey = State#consumer_state.routing_key,
