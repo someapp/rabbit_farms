@@ -119,14 +119,14 @@ connection_close(ConPid, Timeout) ->
 -spec channel_open(pid()) -> {'ok', pid()} | {'error', any()}.
 channel_open(ChanPid) ->
 	case is_process_alive(ChanPid) of
-		true-> catch(amqp_connection:channel_open(ChanPid)), ok;
+		true-> amqp_connection:channel_open(ChanPid), ok;
 		_ -> ok
     end.
 
 -spec channel_close(pid()) -> {'ok', pid()} | {'error', any()}.
 channel_close(ChanPid) ->
 	case is_process_alive(ChanPid) of
-		true-> catch(amqp_connection:close_channel(ChanPid)), ok;
+		true-> amqp_connection:close_channel(ChanPid), ok;
 		_ -> ok
     end.
 
