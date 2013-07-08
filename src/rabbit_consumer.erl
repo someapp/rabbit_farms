@@ -41,7 +41,7 @@
         terminate/2, code_change/3]).
 
 start_()->
-	ok = spark_app_config_srv:start(?APP),
+	
     ok = app_util:start_app(syntax_tools),
     ok = app_util:start_app(compiler),
     ok = app_util:start_app(goldrush),
@@ -54,7 +54,7 @@ start_()->
     ok = app_util:start_app(?APP).
 
 start()->
-	ok = spark_app_config_srv:start(?APP),
+	
     ok = app_util:start_app(?APP).
 
 stop()->
@@ -224,16 +224,21 @@ init([]) ->
  	error_logger:info_msg("Initializing rabbit consumer client"),
 % 	lager:log(info,"Initializing rabbit consumer client"),
     erlang:send_after(?DELAY, self(), {init}),
+    {ok, [ConfList]} = load_config("spark_amqp.config"),
+    {ok, [Amqp_ConfList]} = proplists:get_value(ConfList, amqp_param, []),
+    {ok, [Feeder_ConfList]} = proplists:get_value(ConfList, feeders, []),
+
+    {ok, [Rest_ConList]} = load_config("spark_amqp.config"),
     R = {ok, #consumer_state{
     	connection = self(),
-    	rest_params = get_rest_config(),
-    	amqp_params = get_amqp_config(),
-    	exchange = spark_app_config_srv:lookup(exchange, <<"im.conversation">>),
-    	queue = spark_app_config_srv:lookup(queue, <<"chat">>),
-    	routing_key = spark_app_config_srv:lookup(routing_key, <<"spark.chat">>),
-    	durable = spark_app_config_srv:lookup(durable, false),
-    	transform_module = spark_app_config_srv:lookup(transform_module, undef),
-    	restart_timeout = spark_app_config_srv:lookup(restart_timeout,?RECON_TIMEOUT)
+    	rest_params = get_rest_config(Rest_ConfList),
+    	amqp_params = get_amqp_config(Amqp_ConfList),
+    	exchange = proplists:get_value(Feeder_ConfList, exchange, <<"im.conversation">>),
+    	queue = proplists:get_value(Feeder_ConfList,queue, <<"chat">>),
+    	routing_key = proplists:get_value(Feeder_ConfList, routing_key, <<"spark.chat">>),
+    	durable = proplists:get_value(Feeder_ConfList, durable, false),
+    	transform_module = proplists:get_value(ConfList, transform_module, undef),
+    	restart_timeout = proplists:get_value(ConfList, restart_timeout,?RECON_TIMEOUT)
 
     }},
     R.
@@ -360,40 +365,30 @@ process_message(ContentType, Payload, State)->
 is_alive(P)->
  	erlang:is_process_alive(P).
 
-get_rest_config()->
- 	{ok, ConfDir} = spark_app_config_srv:lookup(confdir, required),
-	{ok, FileName} = spark_app_config_srv:lookup(spark_rest_config, required),
- 	{ok, ConfList} = spark_app_config_srv:reload_state(ConfDir,FileName),
-  	#spark_restc_config {
-    	spark_api_endpoint = spark_app_config_srv:lookup(spark_api_endpoint),
-   	 	spark_app_id = spark_app_config_srv:lookup(spark_app_id),
-    	spark_brand_id = spark_app_config_srv:lookup(spark_brand_id),
-    	spark_client_secret = spark_app_config_srv:lookup(spark_client_secret),
+get_rest_config(Rest_ConfList)->
+   	#spark_restc_config {
+    	spark_api_endpoint = proplists:get_value(Rest_ConfList, spark_api_endpoint),
+   	 	spark_app_id = proplists:get_value(Rest_ConfListspark_app_id),
+    	spark_brand_id = proplists:get_value(Rest_ConfList(spark_brand_id),
+    	spark_client_secret = proplists:get_value(Rest_ConfListspark_client_secret),
     	spark_create_oauth_accesstoken =
-              spark_app_config_srv:lookup(spark_create_oauth_accesstoken),
-    	auth_profile_miniProfile = spark_app_config_srv:lookup(auth_profile_miniProfile),
-    	profile_memberstatus = spark_app_config_srv:lookup(profile_memberstatus),
-    	community2brandId = spark_app_config_srv:lookup(community2brandId)
+              proplists:get_value(Rest_ConfListspark_create_oauth_accesstoken),
+    	auth_profile_miniProfile = proplists:get_value(Rest_ConfListauth_profile_miniProfile),
+    	profile_memberstatus = proplists:get_value(Rest_ConfListprofile_memberstatus),
+    	community2brandId = sproplists:get_value(Rest_ConfList(community2brandId)
   	}.
 
-get_amqp_config()->
- 	{ok, ConfDir} = spark_app_config_srv:lookup(confdir, required),
-	{ok, FileName} = spark_app_config_srv:lookup(spark_rest_config, required),
- 	{ok, ConfList} = spark_app_config_srv:reload_state(ConfDir,FileName),
-	{ok, [Amqp_params]} = spark_app_config_srv:lookup(amqp_param, required),
+get_amqp_config(Amqp_params)->
 	rabbit_farms_config:get_connection_setting(Amqp_params).
 
 
-get_exhange_config() ->
-	{ok, [Amqp_params]} = spark_app_config_srv:lookup(amqp_param, required),
+get_exhange_config(Amqp_params) ->
 	rabbit_farms_config:get_exchange_setting(Amqp_params).
 
-get_queue_config() ->
-	{ok, [Amqp_params]} = spark_app_config_srv:lookup(amqp_param, required),
+get_queue_config(Amqp_params) ->
 	rabbit_farms_config:get_queue_setting(Amqp_params).
 
-get_queue_binding_config()-> 
-	{ok, [Amqp_params]} = spark_app_config_srv:lookup(amqp_param, required),
+get_queue_binding_config(Amqp_params)-> 
 	rabbit_farms_config:get_queue_bind(Amqp_params).
 
 get_channel_pid(State)->
@@ -407,3 +402,19 @@ get_channel_pid(State)->
  				ChanPid;
  		_Reason -> {error, channel_closed}
  	end.
+
+
+ load_config()->
+  {ok, ConfDir}= cwd(),
+  load_config(ConfDir, "spark_consumer.config").
+
+load_config(File) ->
+  {ok, ConfDir}= cwd(),
+  load_config(ConfDir,File).
+
+load_config(ConfDir,File) when is_list(ConfDir), 
+			  is_list(File)->
+  FileFullPath = lists:concat([ConfDir,"/", File]),
+  lager:log(info,"FileFullPath: ~p",[FileFullPath]),
+  {ok, [ConfList]}= file:consult(FileFullPath),
+  {ok, [ConfList]}.
