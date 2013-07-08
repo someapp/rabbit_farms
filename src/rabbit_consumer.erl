@@ -104,12 +104,14 @@ connection_start(Amqp_params_network)
 	amqp_connection:start(Amqp_params_network).
 
 -spec connection_close(pid()) -> 'ok'.
+connection_close(undef) -> ok;
 connection_close(ConPid) ->
 	case is_process_alive(ConPid) of
 		true-> amqp_connection:close(ConPid);
 		Why -> Why
     end.
 -spec connection_close(pid(), pos_integer()) -> 'ok'.
+connection_close(undef, _) ->ok;
 connection_close(ConPid, Timeout) ->
 	case is_process_alive(ConPid) of
 		true-> amqp_connection:close(ConPid, Timeout);
@@ -128,12 +130,12 @@ channel_open(ChanPid) ->
     end.
 
 -spec channel_close(pid()) -> {'ok', pid()} | {'error', any()}.
+channel_close(undef) -> ok;
 channel_close(ChanPid) ->
 	case is_process_alive(ChanPid) of
 		true-> amqp_channel:close(ChanPid);
 		Why -> Why
     end.
-
 
 -spec qos(pid(), non_neg_integer()) -> 'ok' | {'error', any()}.
 qos(Chan, PrefetchCount) ->
