@@ -157,9 +157,9 @@ ack(Channel, DeliveryTag) ->
     end.
 
 -spec subscribe(pid()) -> {ok, binary()} | error.
-do_subscribe(Channel, Queue) ->
+do_subscribe(Channel, Queue, Pid) ->
     Method = #'basic.consume'{queue = Queue, no_ack = false},
-    Pid = self(),
+   
     #'basic.consume_ok'{consumer_tag = CTag} = amqp_channel:subscribe(Channel, Method, Pid),
     error_logger:info_msg("subscribe ok Ctag ~p on pid ~p",[CTag ,Pid]),
     CTag.
@@ -238,7 +238,7 @@ init([]) ->
     {ok, [Rest_ConfList]} = load_config(?REST_CONF),
 
     R = {ok, #consumer_state{
-    	connection = self(),
+    	connection = undef,
     	rest_params = get_rest_config(Rest_ConfList),
     	amqp_params = get_amqp_config(Amqp_ConfList),
     	exchange = proplists:get_value(exchange, Feeder_ConfList, <<"im.conversation">>),
@@ -248,8 +248,8 @@ init([]) ->
  		exclusive = proplists:get_value(exclusive,Feeder_ConfList, false),
 		auto_delete = proplists:get_value(auto_delete,Feeder_ConfList,false),
     	transform_module = proplists:get_value(transform_module, ConfList, undef),
-    	restart_timeout = proplists:get_value(restart_timeout, ConfList, ?RECON_TIMEOUT)
-
+    	restart_timeout = proplists:get_value(restart_timeout, ConfList, ?RECON_TIMEOUT),
+    	consumer_pid = self()
     }},
     R.
 
@@ -324,7 +324,7 @@ handle_call({subscribe}, From, State)->
 	Autodelete = State#consumer_state.auto_delete,
 	declare_queue(ChanPid, Queue, Durable, Exclusive, Autodelete),
 	bind_queue(ChanPid, Queue, Exchange, RoutingKey),
- 	Reply = do_subscribe(ChanPid,Queue),
+ 	Reply = do_subscribe(ChanPid,Queue, State#consumer_state.consumer_pid),
  	error_logger:info_msg("handle subscribe ok",[]),
 	{reply, Reply, State};
 
