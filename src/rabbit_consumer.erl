@@ -28,13 +28,6 @@
 		subscribe/2,
 		register_callback/1
 ]).
--export([
-		get_rest_config/1,
-		get_amqp_config/1,
-		get_queue_config/1,
-		get_queue_binding_config/1
-
-]).
 
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, handle_info/3,
