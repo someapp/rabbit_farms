@@ -1,5 +1,5 @@
 -include_lib("amqp_client/include/amqp_client.hrl").
--include_lib("spark_rest_config.hrl").
+-include_lib("spark_restc_config.hrl").
 
 -record(rabbit_farm,{ farm_name    = default,
 					  amqp_params  = #amqp_params_network{},
