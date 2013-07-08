@@ -90,22 +90,21 @@ register_callback(Mod)->
 %% -------------------------------------------------------------------------
 %% Connection methods
 %% -------------------------------------------------------------------------
--spec connection_start() -> {'ok', pid()} | {'error', any()}.
+-spec connection_start(Amqp_params_network :: #amqp_params_network{}) -> {'ok', pid()} | {'error', any()}.
 connection_start(Amqp_params_network) when is_record(Amqp_params_network,
 								 #amqp_params_network{}) ->
 	amqp_connection:start(Amqp_params_network).
 
-
 -spec connection_close(pid()) -> 'ok'.
-connection_close(Conn) ->
+connection_close(ConPid) ->
 	case is_process_alive(ConPid) of
-		true-> catch(amqp_connection:close(Conn)), ok;
+		true-> catch(amqp_connection:close(ConPid)), ok;
 		_ -> ok
     end.
--spec connection_close(pid()) -> 'ok'.
-connection_close(Conn, Timeout) ->
+-spec connection_close(pid(), pos_integer()) -> 'ok'.
+connection_close(ConPid, Timeout) ->
 	case is_process_alive(ConPid) of
-		true-> catch(amqp_connection:close(Conn, Timeout)), ok;
+		true-> catch(amqp_connection:close(ConPid, Timeout)), ok;
 		_ -> ok
     end.
 
@@ -149,7 +148,7 @@ ack(Channel, DeliveryTag) ->
     end.
 
 -spec subscribe(pid(), binary()) -> {ok, binary()} | error.
-subscribe(Channel, Queue) ->
+do_subscribe(Channel, Queue) ->
     Method = #'basic.consume'{queue = Queue, no_ack = false},
 
     amqp_channel:subscribe(Channel, Method, self()),
@@ -172,7 +171,7 @@ unsubscribe(Channel, CTag) ->
 %% -------------------------------------------------------------------------
 %% queue functions
 %% -------------------------------------------------------------------------
--spec declare_queue() -> ok.
+-spec declare_queue(Channel::pid()) -> ok.
 declare_queue(Channel) ->
     Method = get_queue_config(),
     #'queue.declare_ok'{} = amqp_channel:call(Channel, Method),
@@ -193,6 +192,7 @@ declare_queue(Channel, Queue, Durable, Exclusive, Autodelete) ->
     {'queue.declare_ok', _, _, _} = amqp_channel:call(Channel, Method),
     ok.
 
+-spec bind_queue(Channel::pid()) -> ok.
 bind_queue(Channel)->
 	Method = get_queue_binding_config(),
 	{'queue.bind_ok'} = amqp_channel:call(Channel, Method),
@@ -240,8 +240,8 @@ handle_call({reconnect}, _From, State)->
 	{reply, {ok, State}, State};
 
 handle_call({disconnect}, _From, State)->
-	ok = close_channel(State#consumer_state.channel),
-	ok = close_connection(State#consumer_state.connection),
+	ok = channel_close(State#consumer_state.channel),
+	ok = connection_close(State#consumer_state.connection),
 	{reply, {ok, disconnected}, 
 		State#consumer_state{
 		connection = undef, 
@@ -263,11 +263,12 @@ handle_call({ping}, _From, State)->
 
 handle_call({register_callback, Module},
 			 From, State) ->
-	State#consumer_state.transform_module = Module,
+	State#consumer_state{transform_module = Module},
 	{reply, ok, State};
 
 handle_call({subscribe}, From, State)->
-	ChanPid = get_channel_pid(State),
+	ConPid = State#rabbit_consumer.connection,
+	{ok, ChanPid} = channel_open(ConPid),
 	declare_queue(ChanPid),
 	bind_queue(ChanPid), 
     #'queue.bind'{
@@ -276,7 +277,7 @@ handle_call({subscribe}, From, State)->
 					routing_key = RoutingKey
 
 				} = get_queue_binding_config(),
- 	Reply = subscribe(ChanPid,Queue),
+ 	Reply = do_subscribe(ChanPid,Queue),
 	{reply, Reply, State};
 
 handle_call(_Request, _From, State) ->
@@ -316,15 +317,16 @@ handle_info({'EXIT', Pid, Reason}, State)->
 
 handle_info({init}, State)->
 	lager:log(info , "Setting up initial connection, channel, and queue"),
-	connect(),
-	queue_declare(),
-	queue_bind(),
+	{ok, ConPid} = connect(),
+	{ok, ChanPid} = channel_open(ConPid),
+ 	declare_queue(ChanPid),
+	bind_queue(ChanPid),
 	{noreply, State#consumer_state{
 		connection = undef, 
 		connection_ref = undef,
 		channel = undef,
 		channel_ref =undef}
-	}.
+	};
 
 handle_info(_Info, State) ->
     {noreply, State}.
@@ -374,7 +376,7 @@ get_amqp_config()->
 	rabbit_farms_config:get_connection_setting(Amqp_params).
 
 
-get_exhange_config()_>
+get_exhange_config() ->
 	{ok, [Amqp_params]} = spark_app_config_srv:lookup(amqp_param, required),
 	rabbit_farms_config:get_exchange_setting(Amqp_params).
 
@@ -394,6 +396,6 @@ get_channel_pid(State)->
  	 
  	case is_alive(ConPid) of
  		true -> {ok, ChanPid} = channel_open(ConPid),
- 				ChanPid,
+ 				ChanPid;
  		Else -> {error, Else}
  	end.

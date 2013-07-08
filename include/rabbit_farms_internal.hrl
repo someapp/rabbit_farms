@@ -37,6 +37,11 @@
 		channel_ref :: reference(),
 		transform_module :: module(),
 		restart_timeout = 5000 :: pos_integer(), % restart timeout
+		exchange = <<"">>,
+		routing_key = <<"">>,
+		queue = <<"">>,
+		durable = false,
+
 		amqp_params = #amqp_params_network{} ::#amqp_params_network{},
 
 		rest_params = #spark_restc_config{} ::#spark_restc_config{}
