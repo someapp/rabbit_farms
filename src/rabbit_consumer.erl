@@ -262,8 +262,8 @@ handle_call({open_channel}, _From, State)->
  	ConPid = State#consumer_state.connection,
  	error_logger:info_msg("Connection Pid ~p, is_alive? ~p",
  		[ConPid, is_alive(ConPid)]),
- 	R = channel_open(ConPid),
- 	error_logger:info_msg("Connected Channel ~p",[R]),
+ 	ChanPid = channel_open(ConPid),
+ 	error_logger:info_msg("Connected Channel ~p",[ChanPid]),
 	{reply, ChanPid, 
 		State#consumer_state{channel=ChanPid}};		
 
