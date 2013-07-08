@@ -194,6 +194,7 @@ declare_queue(Channel, Queue, Durable, Exclusive, Autodelete) ->
 		exclusive = Exclusive,
 		auto_delete = Autodelete},
     {'queue.declare_ok', _, _, _} = amqp_channel:call(Channel, Method),
+    error_logger:info_msg("Queue declared OK Q:~p",[Queue]),
     ok.
 
 
@@ -205,6 +206,7 @@ bind_queue(Channel, Queue, Exchange, RoutingKey)->
 
 				},
 	{'queue.bind_ok'} = amqp_channel:call(Channel, Method),
+    error_logger:info_msg("Queue bind OK ~p, ~p, ~p, ~p",[Channel, Exchange, Queue, RoutingKey]),
     ok.
 
 %% -------------------------------------------------------------------------
