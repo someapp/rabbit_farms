@@ -1,4 +1,4 @@
--module(consumer_state).
+-module(rabbit_consumer).
 -behaviour(gen_server).
 
 -include("rabbit_farms.hrl").
@@ -7,7 +7,7 @@
 -include_lib("lager/include/lager.hrl").
 
 -define(SERVER,?MODULE).
--define(APP,consumer_state).
+-define(APP,rabbit_consumer).
 -define(DELAY, 10).
 -define(RECON_TIMEOUT, 5000).
 -define(ETS_FARMS,ets_rabbit_farms).
