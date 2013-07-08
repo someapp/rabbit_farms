@@ -161,7 +161,7 @@ do_subscribe(Channel, Queue) ->
     Method = #'basic.consume'{queue = Queue, no_ack = false},
     Pid = self(),
     #'basic.consume_ok'{consumer_tag = CTag} = amqp_channel:subscribe(Channel, Method, Pid),
-    error_logger:info_msg("subscribe ok ~p on pid ~p",[R, Pid]),
+    error_logger:info_msg("subscribe ok Ctag ~p on pid ~p",[Ctag ,Pid]),
     CTag.
 %    receive
 %        #'basic.consume_ok'{consumer_tag = CTag} -> {ok, CTag};
