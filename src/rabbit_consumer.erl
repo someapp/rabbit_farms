@@ -23,6 +23,7 @@
 
 -export([
 		connect/0,
+		open_channel/0,
 		reconnect/0,
 		disconnect/0,
 		subscribe/2,
@@ -68,6 +69,8 @@ get_farm_pid()->
 connect()->
 	gen_server:call(?SERVER, {connect}).
 
+open_channel()->
+	gen_server:call(?SERVER, {connect_channel}).
 reconnect()->
 	gen_server:call(?SERVER, {reconnect}).
 
