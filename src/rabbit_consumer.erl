@@ -367,7 +367,7 @@ get_rest_config(Rest_ConfList)->
               proplists:get_value(spark_create_oauth_accesstoken, Rest_ConfList),
     	auth_profile_miniProfile = proplists:get_value(auth_profile_miniProfile, Rest_ConfList),
     	profile_memberstatus = proplists:get_value(profile_memberstatus, Rest_ConfList),
-    	community2brandId = sproplists:get_value(community2brandId, Rest_ConfList)
+    	community2brandId = proplists:get_value(community2brandId, Rest_ConfList)
   	}.
 
 -spec get_amqp_config(list()) ->#'amqp_params_network'{}.
