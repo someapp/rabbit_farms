@@ -224,26 +224,26 @@ init([]) ->
  	process_flag(trap_exit, true),
  	error_logger:info_msg("Initializing rabbit consumer client"),
 
-    {ok, [ConfList]} = load_config("spark_amqp.config"),
-    {ok, [Amqp_ConfList]} = proplists:get_value(ConfList, amqp_param, []),
-    {ok, [Feeder_ConfList]} = proplists:get_value(ConfList, feeders, []),
+    {ok, [ConfList]} = load_config(?AMQP_CONF),
+    {ok, [Amqp_ConfList]} = proplists:get_value(amqp_param, ConfList, []),
+    {ok, [Feeder_ConfList]} = proplists:get_value(feeders, ConfList, []),
+    {ok, [Rest_ConfList]} = load_config(?REST_CONF),
 
-    {ok, [Rest_ConfList]} = load_config("spark_amqp.config"),
     R = {ok, #consumer_state{
     	connection = self(),
     	rest_params = get_rest_config(Rest_ConfList),
     	amqp_params = get_amqp_config(Amqp_ConfList),
-    	exchange = proplists:get_value(Feeder_ConfList, exchange, <<"im.conversation">>),
-    	queue = proplists:get_value(Feeder_ConfList,queue, <<"chat">>),
-    	routing_key = proplists:get_value(Feeder_ConfList, routing_key, <<"spark.chat">>),
-    	durable = proplists:get_value(Feeder_ConfList, durable, false),
+    	exchange = proplists:get_value(exchange, Feeder_ConfList, <<"im.conversation">>),
+    	queue = proplists:get_value(queue,Feeder_ConfList, <<"chat">>),
+    	routing_key = proplists:get_value(routing_key,Feeder_ConfList, <<"spark.chat">>),
+    	durable = proplists:get_value(durable,Feeder_ConfList, false),
  
 	
-		exclusive = proplists:get_value(Feeder_ConfList, exclusive, false),
-		auto_delete = proplists:get_value(Feeder_ConfList, auto_delete, false),
+		exclusive = proplists:get_value(exclusive,Feeder_ConfList, false),
+		auto_delete = proplists:get_value(auto_delete,Feeder_ConfList,false),
 
-    	transform_module = proplists:get_value(ConfList, transform_module, undef),
-    	restart_timeout = proplists:get_value(ConfList, restart_timeout,?RECON_TIMEOUT)
+    	transform_module = proplists:get_value(transform_module, Conflist, undef),
+    	restart_timeout = proplists:get_value(restart_timeout, Conflist, ?RECON_TIMEOUT)
 
     }},
     R.
