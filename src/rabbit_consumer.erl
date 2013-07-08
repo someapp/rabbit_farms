@@ -336,11 +336,11 @@ handle_cast(Info, State) ->
 	erlang:display(Info),
     {noreply, State}.
 
-handle_info({#'basic.consume_ok'{}}, State)->
+handle_info({'basic.consume_ok'{}}, State)->
 	{reply, ok, State};
-handle_info({#'basic.cancel_ok'{}}, State)->
+handle_info({'basic.cancel_ok'{}}, State)->
 	{reply, ok, State};
-handle_info({#'basic.deliver'
+handle_info({'basic.deliver'
 			  {consumer_tag = CTag,
 			   delivery_tag = DTag,
 			   redelivered = Redelivered,
