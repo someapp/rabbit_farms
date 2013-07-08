@@ -164,7 +164,8 @@ do_subscribe(Channel, Queue) ->
     error_logger:info_msg("subscribe ok ~p on pid ~p",[R, Pid]),
     receive
         #'basic.consume_ok'{consumer_tag = CTag} -> {ok, CTag};
-        Unknown -> error_logger:info_msg("Receive unknown message format ~p",[Unknown]), {ok, CTag}
+        Unknown -> error_logger:info_msg("Receive unknown message format ~p",[Unknown]), 
+        		  {ok, Unknown}
     after
         ?RESPONSE_TIMEOUT -> {error, timeout}
     end.
