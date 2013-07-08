@@ -277,8 +277,9 @@ handle_call({close_channel}, _From, State)->
 		State#consumer_state{channel=undef}};		
 
 handle_call({reconnect}, _From, State)->
-	
-	{reply, {ok, State}, State};
+	gen_server:call(?SERVER, {disconnect}),
+	Reply = gen_server:call(?SERVER, {connect}),
+	{reply, Reply, State};
 
 handle_call({disconnect}, _From, State)->
 	error_logger:info_msg("Disconnecting ....",[]),
