@@ -39,7 +39,7 @@
 		restart_timeout = 5000 :: pos_integer(), % restart timeout
 		amqp_params = #amqp_params_network{} ::#amqp_params_network{},
 
-		rest_params = #spark_rest_config{} ::#spark_rest_config{}
+		rest_params = #spark_restc_config{} ::#spark_restc_config{}
 
 %		retry_strategy = undef ::atom()
 }).
