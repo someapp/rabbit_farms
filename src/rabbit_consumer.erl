@@ -242,8 +242,8 @@ init([]) ->
 		exclusive = proplists:get_value(exclusive,Feeder_ConfList, false),
 		auto_delete = proplists:get_value(auto_delete,Feeder_ConfList,false),
 
-    	transform_module = proplists:get_value(transform_module, Conflist, undef),
-    	restart_timeout = proplists:get_value(restart_timeout, Conflist, ?RECON_TIMEOUT)
+    	transform_module = proplists:get_value(transform_module, ConfList, undef),
+    	restart_timeout = proplists:get_value(restart_timeout, ConfList, ?RECON_TIMEOUT)
 
     }},
     R.
