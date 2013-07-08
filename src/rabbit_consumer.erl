@@ -123,9 +123,10 @@ connection_close(ConPid, Timeout) ->
 %% -------------------------------------------------------------------------
 
 -spec channel_open(pid()) -> {'ok', pid()} | {'error', any()}.
-channel_open(ChanPid) ->
-	case is_alive(ChanPid) of
-		true-> amqp_connection:open_channel(ChanPid);
+channel_open(undef) -> chanel_not_opened;
+channel_open(ConPid) ->
+	case is_alive(ConPid) of
+		true-> amqp_connection:open_channel(ConPid);
 		Why -> Why
     end.
 
