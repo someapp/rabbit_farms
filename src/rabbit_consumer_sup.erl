@@ -15,6 +15,9 @@
 %% ===================================================================
 %% API functions
 %% ===================================================================
+start_link() ->
+    supervisor:start_link({local, ?MODULE}, ?MODULE, []).
+
 -spec start_link(RabbitFarmModel::#consumer_state{})-> {ok, pid()} | {error, term()}.
 start_link(RabbitFarmModel) ->
     supervisor:start_link({local, ?MODULE}, ?MODULE, [RabbitFarmModel]).
@@ -22,13 +25,13 @@ start_link(RabbitFarmModel) ->
 %% ===================================================================
 %% Supervisor callbacks
 %% ===================================================================
+init()-> init([]).
 -spec init(list())-> {ok, term()} | {error, term()}.
-init([RabbitFarmModel]) ->
-	#consumer_state{farm_name = FarmName} = RabbitFarmModel,
+init(_Args) ->
 	ConfDir = "./conf",
 	FileName = "spark_consumer.config",
     Children = [
-    		?CHILD(spark_app_config_sup, spark_app_config_sup,supervisor,[ConfDir, FileName]),
+ %   		?CHILD(spark_app_config_sup, spark_app_config_sup,supervisor,[ConfDir, FileName]),
     		?CHILD(FarmName, rabbit_consumer, worker, 
          	[RabbitFarmModel])],
     {ok, { {one_for_one, 5, 10}, Children }}.
