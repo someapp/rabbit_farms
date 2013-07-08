@@ -48,9 +48,11 @@ start_()->
     ok = app_util:start_app(rabbit_common),
     ok = app_util:start_app(amqp_client),
     ok = app_util:start_app(crypto),
+    ok = app_util:start_app(erlang_uuid),
     ok = app_util:start_app(?APP).
 
 start()->
+	ok = lager:start(),
     ok = app_util:start_app(?APP).
 
 stop()->
@@ -328,6 +330,9 @@ publish_fun(Type, Exchange, RoutingKey, Message, ContentType)->
 	rabbit_farm_util:get_fun(Type, 
 			#'basic.publish'{ exchange    = Exchange,
 	    					  routing_key = rabbit_farm_util:ensure_binary(RoutingKey)},
-	    	#amqp_msg{props = #'P_basic'{content_type = ContentType}, payload = rabbit_farm_util:ensure_binary(Message)}).
+	    	#amqp_msg{props = #'P_basic'{content_type = ContentType}, 
+	    			  message_id = message_id(),
+	    			  payload = rabbit_farm_util:ensure_binary(Message)}).
 
-
+message_id()->
+	uuid:uuid4().

@@ -20,6 +20,7 @@
             rabbit_farms,
             rabbit_farms_app,
             rabbit_farms_consumer,
+            rabbit_farms_consumer_config,
             rabbit_farms_consumer_sup
   ]},
   {mod, { rabbit_farms_app, []}},

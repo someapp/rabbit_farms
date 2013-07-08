@@ -39,5 +39,9 @@ start_link() ->
 %% ===================================================================
 -spec init(list())-> {ok, term()} | {error, term()}.
 init([]) ->
-    {ok, { {one_for_one, 5, 10}, [?CHILD(rabbit_farms,worker)]} }.
+	Children = [
+		?CHILD(spark_app_config_srv,worker),
+		?CHILD(rabbit_farms,worker)
+	],
+    {ok, { {one_for_one, 5, 10}, Children} }.
 
