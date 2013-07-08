@@ -265,10 +265,10 @@ handle_call({connect_channel}, _From, State)->
 		State#consumer_state{channel=ChanPid}};		
 
 handle_call({close_channel}, _From, State)->
- 	ConPid = State#consumer_state.connection,
- 	error_logger:info_msg("Connection Pid ~p, is_alive? ~p",
- 		[ConPid, is_process_alive(ConPid)]),
- 	R = channel_close(ConPid),
+ 	ChanPid = State#consumer_state.channel,
+ 	error_logger:info_msg("Channel Pid ~p, is_alive? ~p",
+ 		[ChanPid, is_process_alive(ChanPid)]),
+ 	R = channel_close(ChanPid),
  	error_logger:info_msg("Closed Channel: Ret: ~p",[R]),
 	{reply, closed_channel, 
 		State#consumer_state{channel=undef}};		
