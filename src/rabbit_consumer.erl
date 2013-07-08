@@ -223,8 +223,7 @@ confirm_select(Channel) ->
 init([]) ->
  	process_flag(trap_exit, true),
  	error_logger:info_msg("Initializing rabbit consumer client"),
-% 	lager:log(info,"Initializing rabbit consumer client"),
-%    erlang:send_after(?DELAY, self(), {init}),
+
     {ok, [ConfList]} = load_config("spark_amqp.config"),
     {ok, [Amqp_ConfList]} = proplists:get_value(ConfList, amqp_param, []),
     {ok, [Feeder_ConfList]} = proplists:get_value(ConfList, feeders, []),
@@ -334,19 +333,6 @@ handle_info({'EXIT', Pid, Reason}, State)->
 		channel_ref =undef}
 	};
 
-%handle_info({init}, State)->
-%	error_logger:info_msg("Setting up initial connection, channel, and queue"),
-%	{ok, ConPid} = connect(),
-%	{ok, ChanPid} = channel_open(ConPid),
-%	declare_queue(ChanPid),
-%	bind_queue(ChanPid),
-%	{noreply, State#consumer_state{
-%		connection = undef, 
-%		connection_ref = undef,
-%		channel = undef,
-%		channel_ref =undef}
-%	};
-
 handle_info(_Info, State) ->
     {noreply, State}.
 
@@ -433,7 +419,7 @@ load_config(File) ->
 load_config(ConfDir,File) when is_list(ConfDir), 
 			  is_list(File)->
   FileFullPath = lists:concat([ConfDir,"/", File]),
-  lager:log(info,"FileFullPath: ~p",[FileFullPath]),
+  error_logger:info_msg("Loading config: ~p",[FileFullPath]),
   {ok, [ConfList]}= file:consult(FileFullPath),
   {ok, [ConfList]}.
 
