@@ -12,7 +12,7 @@
 -define(RECON_TIMEOUT, 5000).
 -define(ETS_FARMS,ets_rabbit_farms).
 -define(RESPONSE_TIMEOUT,2000).
-
+-define(CONFPATH,"conf").
 -define(AMQP_CONF, "spark_amqp.config").
 -define(REST_CONF, "spark_rest.config").
 
@@ -200,8 +200,13 @@ declare_queue(Channel, Queue, Durable, Exclusive, Autodelete) ->
     ok.
 
 -spec bind_queue(Channel::pid()) -> ok.
-bind_queue(Channel)->
-	Method = get_queue_binding_config(),
+bind_queue(Channel, Queue, Exchange, RoutingKey)->
+	Method = #'queue.bind'{
+					queue = Queue,
+					exchange = Exchange,
+					routing_key = RoutingKey
+
+				},
 	{'queue.bind_ok'} = amqp_channel:call(Channel, Method),
     ok.
 
@@ -282,14 +287,12 @@ handle_call({register_callback, Module},
 handle_call({subscribe}, From, State)->
 	ConPid = State#consumer_state.connection,
 	{ok, ChanPid} = channel_open(ConPid),
+	Queue = State#rabbit_consumer.queue,
+	Exchange = State#rabbit_consumer.exchange,
+	RoutingKey = State#rabbit_consumer.routing_key,
 	declare_queue(ChanPid),
-	bind_queue(ChanPid), 
-    #'queue.bind'{
-					queue = Queue,
-					exchange = Exchange,
-					routing_key = RoutingKey
 
-				} = get_queue_binding_config(),
+	bind_queue(ChanPid, Queue, Exchange, RoutingKey)
  	Reply = do_subscribe(ChanPid,Queue),
 	{reply, Reply, State};
 
@@ -378,9 +381,21 @@ get_rest_config(Rest_ConfList)->
     	community2brandId = sproplists:get_value(Rest_ConfList, community2brandId)
   	}.
 
-get_amqp_config(Amqp_params)->
-	rabbit_farms_config:get_connection_setting(Amqp_params).
-
+-spec get_amqp_config(list()) ->#'amqp_params_network'{}.
+get_amqp_config(FarmOptions) ->
+	UserName    = proplists:get_value(username,FarmOptions,<<"guest">>),
+	Password    = proplists:get_value(password,FarmOptions,<<"V2pOV2JHTXpVVDA9">>),
+	true = password:is_secure(Password),
+	VirtualHost = proplists:get_value(virtual_host,FarmOptions,<<"/">>),
+	Host        = proplists:get_value(host,FarmOptions,"localhost"),
+	Port        = proplists:get_value(port,FarmOptions,5672),
+	#amqp_params_network{
+				username     = rabbit_farm_util:ensure_binary(UserName),
+				password     = Password,
+				virtual_host = rabbit_farm_util:ensure_binary(VirtualHost),
+				host         = Host,
+				port         = Port
+				}.
 
 get_exhange_config(Amqp_params) ->
 	rabbit_farms_config:get_exchange_setting(Amqp_params).

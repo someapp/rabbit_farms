@@ -41,7 +41,8 @@
 		routing_key = <<"">>,
 		queue = <<"">>,
 		durable = false,
-
+		exclusive = false,
+		auto_delete = false,
 		amqp_params = #amqp_params_network{} ::#amqp_params_network{},
 
 		rest_params = #spark_restc_config{} ::#spark_restc_config{}
