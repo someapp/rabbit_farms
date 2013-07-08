@@ -243,16 +243,27 @@ init([]) ->
 
 handle_call({connect}, _From, State)->
  	{ok, ConPid} = connection_start(State#consumer_state.amqp_params),
+ 	error_logger:info_msg("Established connection",[]),
 	{reply, ConPid, 
 		State#consumer_state{connection=ConPid}};
+
+handle_call({connect_channel}, _From, State)->
+ 	ConPid = State#consumer_state.connection,
+ 	{ok, ChanPid} = channel_open(ConPid),
+ 	error_logger:info_msg("Connected Channel",[]),
+	{reply, ChanPid, 
+		State#consumer_state{channel=ChanPid}};		
 
 handle_call({reconnect}, _From, State)->
 	
 	{reply, {ok, State}, State};
 
 handle_call({disconnect}, _From, State)->
+	error_logger:info_msg("Disconnecting ....",[]),
 	ok = channel_close(State#consumer_state.channel),
+	error_logger:info_msg("Disconnected Channel",[]),
 	ok = connection_close(State#consumer_state.connection),
+	error_logger:info_msg("Disconnected Connection",[]),
 	{reply, {ok, disconnected}, 
 		State#consumer_state{
 		connection = undef, 
@@ -402,7 +413,7 @@ get_channel_pid(State)->
  	end.
 
 
- load_config()->
+load_config()->
   {ok, ConfDir}= cwd(),
   load_config(ConfDir, "spark_consumer.config").
 
