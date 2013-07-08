@@ -331,7 +331,7 @@ publish_fun(Type, Exchange, RoutingKey, Message, ContentType)->
 			#'basic.publish'{ exchange    = Exchange,
 	    					  routing_key = rabbit_farm_util:ensure_binary(RoutingKey)},
 	    	#amqp_msg{props = #'P_basic'{content_type = ContentType}, 
-	    			  message_id = message_id(),
+	    			  %message_id = message_id(),
 	    			  payload = rabbit_farm_util:ensure_binary(Message)}).
 
 message_id()->
