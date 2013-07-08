@@ -199,7 +199,7 @@ declare_queue(Channel, Queue, Durable, Exclusive, Autodelete) ->
     {'queue.declare_ok', _, _, _} = amqp_channel:call(Channel, Method),
     ok.
 
--spec bind_queue(Channel::pid()) -> ok.
+
 bind_queue(Channel, Queue, Exchange, RoutingKey)->
 	Method = #'queue.bind'{
 					queue = Queue,
@@ -228,7 +228,7 @@ init([]) ->
  	process_flag(trap_exit, true),
  	error_logger:info_msg("Initializing rabbit consumer client"),
 % 	lager:log(info,"Initializing rabbit consumer client"),
-    erlang:send_after(?DELAY, self(), {init}),
+%    erlang:send_after(?DELAY, self(), {init}),
     {ok, [ConfList]} = load_config("spark_amqp.config"),
     {ok, [Amqp_ConfList]} = proplists:get_value(ConfList, amqp_param, []),
     {ok, [Feeder_ConfList]} = proplists:get_value(ConfList, feeders, []),
@@ -242,6 +242,11 @@ init([]) ->
     	queue = proplists:get_value(Feeder_ConfList,queue, <<"chat">>),
     	routing_key = proplists:get_value(Feeder_ConfList, routing_key, <<"spark.chat">>),
     	durable = proplists:get_value(Feeder_ConfList, durable, false),
+ 
+	
+		Exclusive = proplists:get_value(Feeder_ConfList, exclusive, false),
+		Autodelete = proplists:get_value(Feeder_ConfList, auto_delete, false),
+
     	transform_module = proplists:get_value(ConfList, transform_module, undef),
     	restart_timeout = proplists:get_value(ConfList, restart_timeout,?RECON_TIMEOUT)
 
@@ -290,9 +295,11 @@ handle_call({subscribe}, From, State)->
 	Queue = State#rabbit_consumer.queue,
 	Exchange = State#rabbit_consumer.exchange,
 	RoutingKey = State#rabbit_consumer.routing_key,
-	declare_queue(ChanPid),
-
-	bind_queue(ChanPid, Queue, Exchange, RoutingKey)
+	Durable = State#rabbit_consumer.durable,
+	Exclusive = State#rabbit_consumer.exclusive,
+	Autodelete = State#rabbit_consumer.auto_delete,
+	declare_queue(ChanPid, Queue, Durable, Exclusive, Autodelete),
+	bind_queue(ChanPid, Queue, Exchange, RoutingKey),
  	Reply = do_subscribe(ChanPid,Queue),
 	{reply, Reply, State};
 
@@ -331,18 +338,18 @@ handle_info({'EXIT', Pid, Reason}, State)->
 		channel_ref =undef}
 	};
 
-handle_info({init}, State)->
-	error_logger:info_msg("Setting up initial connection, channel, and queue"),
-	{ok, ConPid} = connect(),
-	{ok, ChanPid} = channel_open(ConPid),
- 	declare_queue(ChanPid),
-	bind_queue(ChanPid),
-	{noreply, State#consumer_state{
-		connection = undef, 
-		connection_ref = undef,
-		channel = undef,
-		channel_ref =undef}
-	};
+%handle_info({init}, State)->
+%	error_logger:info_msg("Setting up initial connection, channel, and queue"),
+%	{ok, ConPid} = connect(),
+%	{ok, ChanPid} = channel_open(ConPid),
+%	declare_queue(ChanPid),
+%	bind_queue(ChanPid),
+%	{noreply, State#consumer_state{
+%		connection = undef, 
+%		connection_ref = undef,
+%		channel = undef,
+%		channel_ref =undef}
+%	};
 
 handle_info(_Info, State) ->
     {noreply, State}.
