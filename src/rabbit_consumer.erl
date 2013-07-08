@@ -225,8 +225,8 @@ init([]) ->
  	error_logger:info_msg("Initializing rabbit consumer client"),
 
     {ok, [ConfList]} = load_config(?AMQP_CONF),
-    {ok, [Amqp_ConfList]} = proplists:get_value(amqp_param, ConfList, []),
-    {ok, [Feeder_ConfList]} = proplists:get_value(feeders, ConfList, []),
+    Amqp_ConfList = proplists:get_value(amqp_param, ConfList, []),
+    Feeder_ConfList = proplists:get_value(feeders, ConfList, []),
     {ok, [Rest_ConfList]} = load_config(?REST_CONF),
 
     R = {ok, #consumer_state{
