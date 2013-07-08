@@ -1,4 +1,5 @@
 -include_lib("amqp_client/include/amqp_client.hrl").
+-include_lib("spark_rest_config.hrl").
 
 -record(rabbit_farm,{ farm_name    = default,
 					  amqp_params  = #amqp_params_network{},
@@ -37,7 +38,7 @@
 		transform_module :: module(),
 		restart_timeout = 5000 :: pos_integer(), % restart timeout
 		amqp_params = #amqp_params_network{} ::#amqp_params_network{},
-		
+
 		rest_params = #spark_rest_config{} ::#spark_rest_config{}
 
 %		retry_strategy = undef ::atom()
