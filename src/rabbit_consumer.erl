@@ -1,4 +1,4 @@
--module(rabbit_consumer).
+-module(consumer_state).
 -behaviour(gen_server).
 
 -include("rabbit_farms.hrl").
@@ -7,7 +7,7 @@
 -include_lib("lager/include/lager.hrl").
 
 -define(SERVER,?MODULE).
--define(APP,rabbit_consumer).
+-define(APP,consumer_state).
 -define(DELAY, 10).
 -define(RECON_TIMEOUT, 5000).
 -define(ETS_FARMS,ets_rabbit_farms).
@@ -178,11 +178,7 @@ unsubscribe(Channel, CTag) ->
 %% -------------------------------------------------------------------------
 %% queue functions
 %% -------------------------------------------------------------------------
--spec declare_queue(Channel::pid()) -> ok.
-declare_queue(Channel) ->
-    Method = get_queue_config(),
-    #'queue.declare_ok'{} = amqp_channel:call(Channel, Method),
-    ok.
+
 -spec declare_queue(pid(), binary()) -> ok.
 declare_queue(Channel, Queue) ->
     Method = #'queue.declare'{queue = Queue, durable = true},
@@ -244,8 +240,8 @@ init([]) ->
     	durable = proplists:get_value(Feeder_ConfList, durable, false),
  
 	
-		Exclusive = proplists:get_value(Feeder_ConfList, exclusive, false),
-		Autodelete = proplists:get_value(Feeder_ConfList, auto_delete, false),
+		exclusive = proplists:get_value(Feeder_ConfList, exclusive, false),
+		auto_delete = proplists:get_value(Feeder_ConfList, auto_delete, false),
 
     	transform_module = proplists:get_value(ConfList, transform_module, undef),
     	restart_timeout = proplists:get_value(ConfList, restart_timeout,?RECON_TIMEOUT)
@@ -292,12 +288,12 @@ handle_call({register_callback, Module},
 handle_call({subscribe}, From, State)->
 	ConPid = State#consumer_state.connection,
 	{ok, ChanPid} = channel_open(ConPid),
-	Queue = State#rabbit_consumer.queue,
-	Exchange = State#rabbit_consumer.exchange,
-	RoutingKey = State#rabbit_consumer.routing_key,
-	Durable = State#rabbit_consumer.durable,
-	Exclusive = State#rabbit_consumer.exclusive,
-	Autodelete = State#rabbit_consumer.auto_delete,
+	Queue = State#consumer_state.queue,
+	Exchange = State#consumer_state.exchange,
+	RoutingKey = State#consumer_state.routing_key,
+	Durable = State#consumer_state.durable,
+	Exclusive = State#consumer_state.exclusive,
+	Autodelete = State#consumer_state.auto_delete,
 	declare_queue(ChanPid, Queue, Durable, Exclusive, Autodelete),
 	bind_queue(ChanPid, Queue, Exchange, RoutingKey),
  	Reply = do_subscribe(ChanPid,Queue),
