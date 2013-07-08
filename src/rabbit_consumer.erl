@@ -29,10 +29,10 @@
 		register_callback/1
 ]).
 -export([
-		get_rest_config/0,
-		get_amqp_config/0,
-		get_queue_config/0,
-		get_queue_binding_config/0
+		get_rest_config/1,
+		get_amqp_config/1,
+		get_queue_config/1,
+		get_queue_binding_config/1
 
 ]).
 
@@ -228,7 +228,7 @@ init([]) ->
     {ok, [Amqp_ConfList]} = proplists:get_value(ConfList, amqp_param, []),
     {ok, [Feeder_ConfList]} = proplists:get_value(ConfList, feeders, []),
 
-    {ok, [Rest_ConList]} = load_config("spark_amqp.config"),
+    {ok, [Rest_ConfList]} = load_config("spark_amqp.config"),
     R = {ok, #consumer_state{
     	connection = self(),
     	rest_params = get_rest_config(Rest_ConfList),
@@ -418,3 +418,7 @@ load_config(ConfDir,File) when is_list(ConfDir),
   lager:log(info,"FileFullPath: ~p",[FileFullPath]),
   {ok, [ConfList]}= file:consult(FileFullPath),
   {ok, [ConfList]}.
+
+cwd()->
+  {ok, Cwd} = file:get_cwd(),
+  {ok, lists:concat([Cwd,"/",?CONFPATH])}.
