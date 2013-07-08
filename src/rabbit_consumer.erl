@@ -218,10 +218,10 @@ init([]) ->
     erlang:send_after(?DELAY, self(), {init}),
     R = {ok, #consumer_state{
     	connection = self(),
-    	rest_conn = get_rest_config(),
-    	amqp_params_network = get_amqp_config(),
+    	rest_params = get_rest_config(),
+    	amqp_params = get_amqp_config(),
     	exchange = spark_app_config_srv:lookup(exchange, <<"im.conversation">>),
-    	queue_name = spark_app_config_srv:lookup(queue_name, <<"chat">>),
+    	queue_name = spark_app_config_srv:lookup(queue, <<"chat">>),
     	routing_key = spark_app_config_srv:lookup(routing_key, <<"spark.chat">>),
     	durable = spark_app_config_srv:lookup(durable, false),
     	transform_module = spark_app_config_srv:lookup(transform_module, required),
