@@ -26,7 +26,7 @@
 
 %% Helper macro for declaring children of supervisor
 -define(CHILD(I, Type), {I, {I, start_link, []}, permanent, 5000, Type, [I]}).
-
+-define(CHILD_SUP(Name, Mod, Type, Args), {Name, {Mod, start_link, Args}, permanent, 5000, Type, [Mod]}).
 %% ===================================================================
 %% API functions
 %% ===================================================================
@@ -39,8 +39,10 @@ start_link() ->
 %% ===================================================================
 -spec init(list())-> {ok, term()} | {error, term()}.
 init([]) ->
+	ConfDir = "./conf",
+	FileName = "spark_consumer.config",
 	Children = [
-		?CHILD(spark_app_config_srv,worker),
+		?CHILD_SUP(spark_app_config_sup, spark_app_config_sup,supervisor,[ConfDir, FileName]),
 		?CHILD(rabbit_farms,worker)
 	],
     {ok, { {one_for_one, 5, 10}, Children} }.
