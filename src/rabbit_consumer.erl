@@ -160,15 +160,16 @@ ack(Channel, DeliveryTag) ->
 do_subscribe(Channel, Queue) ->
     Method = #'basic.consume'{queue = Queue, no_ack = false},
     Pid = self(),
-    R = amqp_channel:subscribe(Channel, Method, Pid),
+    #'basic.consume_ok'{consumer_tag = CTag} = amqp_channel:subscribe(Channel, Method, Pid),
     error_logger:info_msg("subscribe ok ~p on pid ~p",[R, Pid]),
-    receive
-        #'basic.consume_ok'{consumer_tag = CTag} -> {ok, CTag};
-        Unknown -> error_logger:info_msg("Receive unknown message format ~p",[Unknown]), 
-        		  {ok, Unknown}
-    after
-        ?RESPONSE_TIMEOUT -> {error, timeout}
-    end.
+    CTag.
+%    receive
+%        #'basic.consume_ok'{consumer_tag = CTag} -> {ok, CTag};
+%        Unknown -> error_logger:info_msg("Receive unknown message format ~p",[Unknown]), 
+%        		  {ok, Unknown}
+%    after
+%        ?RESPONSE_TIMEOUT -> {error, timeout}
+%    end.
 
 -spec unsubscribe(pid(), binary()) -> ok | error.
 unsubscribe(Channel, CTag) ->
