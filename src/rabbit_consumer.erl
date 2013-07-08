@@ -92,7 +92,7 @@ register_callback(Mod)->
 %% -------------------------------------------------------------------------
 -spec connection_start(Amqp_params_network :: #amqp_params_network{}) -> {'ok', pid()} | {'error', any()}.
 connection_start(Amqp_params_network) 
-			when is_record(Amqp_params_network,amqp_params_network{}) ->
+			when is_record(Amqp_params_network,amqp_params_network) ->
 	amqp_connection:start(Amqp_params_network).
 
 -spec connection_close(pid()) -> 'ok'.
