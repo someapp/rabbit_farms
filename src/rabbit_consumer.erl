@@ -106,14 +106,14 @@ connection_start(Amqp_params_network)
 -spec connection_close(pid()) -> 'ok'.
 connection_close(undef) -> ok;
 connection_close(ConPid) ->
-	case is_process_alive(ConPid) of
+	case is_alive(ConPid) of
 		true-> amqp_connection:close(ConPid);
 		Why -> Why
     end.
 -spec connection_close(pid(), pos_integer()) -> 'ok'.
 connection_close(undef, _) ->ok;
 connection_close(ConPid, Timeout) ->
-	case is_process_alive(ConPid) of
+	case is_alive(ConPid) of
 		true-> amqp_connection:close(ConPid, Timeout);
 		Why-> Why
     end.
@@ -124,7 +124,7 @@ connection_close(ConPid, Timeout) ->
 
 -spec channel_open(pid()) -> {'ok', pid()} | {'error', any()}.
 channel_open(ChanPid) ->
-	case is_process_alive(ChanPid) of
+	case is_alive(ChanPid) of
 		true-> amqp_connection:open_channel(ChanPid);
 		Why -> Why
     end.
@@ -132,7 +132,7 @@ channel_open(ChanPid) ->
 -spec channel_close(pid()) -> {'ok', pid()} | {'error', any()}.
 channel_close(undef) -> ok;
 channel_close(ChanPid) ->
-	case is_process_alive(ChanPid) of
+	case is_alive(ChanPid) of
 		true-> amqp_channel:close(ChanPid);
 		Why -> Why
     end.
@@ -260,7 +260,7 @@ handle_call({connect}, _From, State)->
 handle_call({connect_channel}, _From, State)->
  	ConPid = State#consumer_state.connection,
  	error_logger:info_msg("Connection Pid ~p, is_alive? ~p",
- 		[ConPid, is_process_alive(ConPid)]),
+ 		[ConPid, is_alive(ConPid)]),
  	{ok, ChanPid} = channel_open(ConPid),
  	error_logger:info_msg("Connected Channel",[]),
 	{reply, ChanPid, 
@@ -269,7 +269,7 @@ handle_call({connect_channel}, _From, State)->
 handle_call({close_channel}, _From, State)->
  	ChanPid = State#consumer_state.channel,
  	error_logger:info_msg("Channel Pid ~p, is_alive? ~p",
- 		[ChanPid, is_process_alive(ChanPid)]),
+ 		[ChanPid, is_alive(ChanPid)]),
  	R = channel_close(ChanPid),
  	error_logger:info_msg("Closed Channel: Ret: ~p",[R]),
 	{reply, closed_channel, 
@@ -378,7 +378,7 @@ process_message(chat,Payload, Module)->
 process_message(ContentType, Payload, State)->
 	{unsupported, ContentType}.
 
-
+is_alive(undef) -> false;
 is_alive(P)->
  	erlang:is_process_alive(P).
 
