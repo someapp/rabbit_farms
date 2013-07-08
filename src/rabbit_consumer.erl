@@ -270,7 +270,7 @@ handle_call({close_channel}, _From, State)->
  		[ConPid, is_process_alive(ConPid)]),
  	R = channel_close(ConPid),
  	error_logger:info_msg("Closed Channel: Ret: ~p",[R]),
-	{reply, ChanPid, 
+	{reply, closed_channel, 
 		State#consumer_state{channel=undef}};		
 
 handle_call({reconnect}, _From, State)->
