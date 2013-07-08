@@ -28,7 +28,7 @@ init([RabbitFarmModel]) ->
 	ConfDir, = "./conf",
 	FileName = "spark_consumer.config"
     Children = [
-    		?CHILD(spark_app_config_sup,supervisor,[ConfDir, FileName]),
+    		?CHILD(spark_app_config_sup, spark_app_config_sup,supervisor,[ConfDir, FileName]),
     		?CHILD(FarmName, rabbit_consumer, worker, 
          	[RabbitFarmModel])],
     {ok, { {one_for_one, 5, 10}, Children }}.
