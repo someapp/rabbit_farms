@@ -71,7 +71,7 @@ connect()->
 	gen_server:call(?SERVER, {connect}).
 
 open_channel()->
-	gen_server:call(?SERVER, {connect_channel}).
+	gen_server:call(?SERVER, {open_channel}).
 
 close_channel()->
 	gen_server:call(?SERVER, {close_channel}).
@@ -257,12 +257,12 @@ handle_call({connect}, _From, State)->
 	{reply, ConPid, 
 		State#consumer_state{connection=ConPid}};
 
-handle_call({connect_channel}, _From, State)->
+handle_call({open_channel}, _From, State)->
  	ConPid = State#consumer_state.connection,
  	error_logger:info_msg("Connection Pid ~p, is_alive? ~p",
  		[ConPid, is_alive(ConPid)]),
  	{ok, ChanPid} = channel_open(ConPid),
- 	error_logger:info_msg("Connected Channel",[]),
+ 	error_logger:info_msg("Connected Channel ~p",[ChanPid]),
 	{reply, ChanPid, 
 		State#consumer_state{channel=ChanPid}};		
 

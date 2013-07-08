@@ -30,12 +30,12 @@
 -record(consumer_state, {
 		farm_name = [] ::string(),
 %		status = uninitialized  :: initialized | uninitialized,
-		consumer_pid :: pid(),
-		connection :: pid(),
+		consumer_pid =undef :: pid(),
+		connection = undef :: pid(),
 		connection_ref ::reference(),
-		channel :: pid(),
-		channel_ref :: reference(),
-		transform_module :: module(),
+		channel = undef:: pid(),
+		channel_ref =undef :: reference(),
+		transform_module =undef :: module(),
 		restart_timeout = 5000 :: pos_integer(), % restart timeout
 		exchange = <<"">>,
 		routing_key = <<"">>,
