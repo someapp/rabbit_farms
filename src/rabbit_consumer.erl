@@ -371,6 +371,9 @@ handle_info({Any}, State
 	error_logger:info("Any message ~p~n",[Any]),
 	{reply, ok , State};
 
+handle_info({'DOWN', _MRef, process, Pid, Info}, State) ->
+    error_logger:error("DOWN Pid ~p, Info ~p",[Pid, Info]),
+    {noreply, State};
 
 handle_info({'EXIT', Pid, Reason}, State)->
 	error_logger:error("amqp connection (~p) down ",[State#consumer_state.connection]),
