@@ -225,8 +225,8 @@ init([]) ->
     	queue = spark_app_config_srv:lookup(queue, <<"chat">>),
     	routing_key = spark_app_config_srv:lookup(routing_key, <<"spark.chat">>),
     	durable = spark_app_config_srv:lookup(durable, false),
-    	transform_module = spark_app_config_srv:lookup(transform_module, required),
-    	restart_timeout = spark_app_config_srv:lookup(transform_module,?RECON_TIMEOUT)
+    	transform_module = spark_app_config_srv:lookup(transform_module, undef),
+    	restart_timeout = spark_app_config_srv:lookup(restart_timeout,?RECON_TIMEOUT)
 
     }},
     R.
