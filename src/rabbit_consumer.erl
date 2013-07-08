@@ -374,7 +374,7 @@ get_rest_config(Rest_ConfList)->
 get_amqp_config(FarmOptions) ->
 	UserName    = proplists:get_value(username,FarmOptions,<<"guest">>),
 	SecPassword    = proplists:get_value(password,FarmOptions,<<"V2pOV2JHTXpVVDA9">>),
-	true = password:is_secure(Password),
+	true = password:is_secure(SecPassword),
 	VirtualHost = proplists:get_value(virtual_host,FarmOptions,<<"/">>),
 	Host        = proplists:get_value(host,FarmOptions,"localhost"),
 	Port        = proplists:get_value(port,FarmOptions,5672),
