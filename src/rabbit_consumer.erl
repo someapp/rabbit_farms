@@ -340,7 +340,13 @@ handle_info({#'basic.consume_ok'{}}, State)->
 	{reply, ok, State};
 handle_info({#'basic.cancel_ok'{}}, State)->
 	{reply, ok, State};
-handle_info({#'basic.deliver'{consumer_tag = Tag},
+handle_info({#'basic.deliver'
+			  {consumer_tag = CTag,
+			   delivery_tag = DTag,
+			   redelivered = Redelivered,
+			   exchange = Exchange,
+			   routing_key  =RoutingKey
+			  },
 			 Content}, State
 			) ->
     #amqp_msg{payload = Payload, props = Props} = Content,
