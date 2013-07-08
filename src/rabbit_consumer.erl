@@ -394,7 +394,7 @@ code_change(_OldVsn, State, _Extra) ->
     {ok, State}.
 
 terminate(Reason, State) ->
-	gen_server:call(?SERVER, {disconnect}),
+%	gen_server:call(?SERVER, {disconnect}),
 	ok.
 
 process_message(chat,Payload, Module)->
