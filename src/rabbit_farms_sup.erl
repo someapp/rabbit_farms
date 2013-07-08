@@ -27,7 +27,7 @@ init([]) ->
 	ConfDir = "./conf",
 	FileName = "spark_consumer.config",
 	Children = [
-		?CHILD_SUP(spark_app_config_sup, spark_app_config_sup,supervisor,[ConfDir, FileName]),
+		?CHILD_SUP(spark_app_config_sup, spark_app_config_sup,supervisor,[[ConfDir, FileName]]),
 		?CHILD(rabbit_farms,worker)
 	],
     {ok, { {one_for_one, 5, 10}, Children} }.
