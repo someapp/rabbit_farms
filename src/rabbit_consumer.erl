@@ -170,7 +170,7 @@ ack(Channel, DeliveryTag) ->
         _:{noproc, _} -> {error, noproc}
     end.
 
--spec subscribe(pid()) -> {ok, binary()} | error.
+-spec do_subscribe(pid(), binary, pid()) -> {ok, binary()} | error.
 do_subscribe(Channel, Queue, Pid) ->
     Method = #'basic.consume'{queue = Queue, no_ack = false},
     #'basic.consume_ok'{consumer_tag = CTag} = amqp_channel:subscribe(Channel, Method, Pid),
