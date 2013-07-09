@@ -520,16 +520,11 @@ get_queue_binding_config(Amqp_params)->
 
 -spec get_channel_pid(#'consumer_state'{}) -> pid() | {error, atom()}.
 get_channel_pid(State)->
-	ConPid = case is_alive(State#consumer_state.connection) of
- 		true -> State#consumer_state.connection;
- 		_Else -> erlang:send_after(?DELAY, self(), {reconnect})
- 	end,
- 	 
- 	case is_alive(ConPid) of
- 		true -> {ok, ChanPid} = channel_open(ConPid),
- 				ChanPid;
- 		_Reason -> {error, channel_closed}
- 	end.
+    ConPid = State#consumer_state.connection,
+    case channel_open(ConPid) of
+    	{ok, Pid} -> Pid;
+    	R -> R
+    end.
 
 -spec load_config()-> list().
 load_config()->
