@@ -537,6 +537,6 @@ os_now()->
   R =os:timestamp(),
   calendar:now_to_universal_time(R).
 
--spec timespan( datetime1970(), datetime1970())-> datetime1970().
+%-spec timespan( datetime1970(), datetime1970())-> datetime1970().
 timespan(A,B)->
   calendar:time_difference(A,B).
