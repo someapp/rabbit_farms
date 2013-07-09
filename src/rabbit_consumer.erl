@@ -36,6 +36,7 @@
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, handle_info/3,
         terminate/2, code_change/3]).
 
+-spec start_() -> ok.
 start_()->
 	
     ok = app_util:start_app(syntax_tools),
@@ -49,46 +50,58 @@ start_()->
     ok = app_util:start_app(restc),
     ok = app_util:start_app(?APP).
 
+-spec start() -> ok.
 start()->
 	
     ok = app_util:start_app(?APP).
-
+-spec stop() -> ok.
 stop()->
  	gen_server:call(?SERVER,{stop, normal}).
 
+-spec start() -> pid().
 start_link() ->
     gen_server:start_link({local, ?SERVER}, ?MODULE, [], []).
 
+-spec ping() -> pang.
 ping()->
 	gen_server:call(?SERVER,{ping}).
 
+-spec get_status() -> #consumer_state{}.
 get_status()->
     gen_server:call(?SERVER, {get_status}).
 
+-spec get_farm_pid() -> pid().
 get_farm_pid()->
 	gen_server:call(?SERVER, {get_farm_pid}).
 
+-spec connect()-> pid().
 connect()->
 	gen_server:call(?SERVER, {connect}).
 
+-spec open_channel()-> pid().
 open_channel()->
 	gen_server:call(?SERVER, {open_channel}).
 
+-spec close_channel()-> ok.
 close_channel()->
 	gen_server:call(?SERVER, {close_channel}).
 
+-spec reconnect() -> pid().
 reconnect()->
 	gen_server:call(?SERVER, {reconnect}).
 
+-spec disconnect() -> ok.
 disconnect()->
 	gen_server:call(?SERVER, {disconnect}).
 
+-spec subscribe() -> ok.
 subscribe(call)  ->
 	gen_server:call(?SERVER, {subscribe});
 
 subscribe(cast) ->
 	gen_server:cast(?SERVER, {subscribe}).
 
+-spec register_callback(atom()) -> ok.
 register_callback(Mod)->
 	gen_server:call(?SERVER, {register_callback, 
 							  Mod}).
@@ -261,10 +274,11 @@ handle_call({connect}, _From, State)->
 
 handle_call({open_channel}, _From, State)->
 	Start = os_now(),
- 	ConPid = State#consumer_state.connection,
- 	error_logger:info_msg("Connection Pid ~p, is_alive? ~p",
- 		[ConPid, is_alive(ConPid)]),
- 	{ok, ChanPid} = channel_open(ConPid),
+	ChanPid =get_channel_pid(State),
+% 	ConPid = State#consumer_state.connection,
+% 	error_logger:info_msg("Connection Pid ~p, is_alive? ~p",
+% 		[ConPid, is_alive(ConPid)]),
+% 	{ok, ChanPid} = channel_open(ConPid),
  	End = os_now(),
  	TSpan = timespan(Start, End),
  	error_logger:info_msg("Connected Channel ~p. Timespan ~p",[ChanPid, TSpan]),
@@ -328,9 +342,10 @@ handle_call({register_callback, Module},
 
 handle_call({subscribe}, From, State)->
 	Start = os_now(),
-	ConPid = State#consumer_state.connection,
-	ChanPid = State#consumer_state.channel,
+%	ConPid = State#consumer_state.connection,
+%	ChanPid = State#consumer_state.channel,
 %	{ok, ChanPid} = channel_open(ConPid),
+	ChanPid =get_channel_pid(State),
 	Queue = State#consumer_state.queue,
 	Exchange = State#consumer_state.exchange,
 	RoutingKey = State#consumer_state.routing_key,
@@ -517,11 +532,11 @@ cwd()->
   {ok, Cwd} = file:get_cwd(),
   {ok, lists:concat([Cwd,"/",?CONFPATH])}.
 
--spec os_now() -> calendar::timestamp().
+-spec os_now() -> calendar::datetime1970().
 os_now()->
   R =os:timestamp(),
   calendar:now_to_universal_time(R).
 
--spec timespan(calendar::timestamp(), calendar::timestamp(),calendar::timestamp())-> calendar::timestamp().
+-spec timespan(calendar::datetime1970(), calendar::datetime1970(),calendar::datetime1970())-> calendar::datetime1970().
 timespan(A,B)->
   calendar:time_difference(A,B).
