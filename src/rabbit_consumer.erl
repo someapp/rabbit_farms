@@ -268,6 +268,8 @@ handle_call({connect}, _From, State)->
 
 handle_call({open_channel}, _From, State)->
 	Start = os_now(),
+	ConPid = State#consumer_state.connection,
+	error_logger:info_msg("Connected Connection ~p Channel ~p.",[ConPid, ChanPid]),
 	ChanPid =get_channel_pid(State),
  	End = os_now(),
  	TSpan = timespan(Start, End),
