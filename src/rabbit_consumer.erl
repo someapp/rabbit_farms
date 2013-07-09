@@ -367,6 +367,7 @@ handle_cast(Info, State) ->
     {noreply, State}.
 
 handle_info({init}, State) ->
+	NewState = State,
 	Amqp_params = State#consumer_state.amqp_params,
 	ConPid = 
 	case connection_start(Amqp_params) of
@@ -512,15 +513,8 @@ get_queue_binding_config(Amqp_params)->
 -spec get_channel_pid(#'consumer_state'{}) -> pid() | {error, atom()}.
 get_channel_pid(State)->
 	ConPid = case is_alive(State#consumer_state.connection) of
- 		true -> Connection = State#consumer_state.connection,
- 				Name = ?SERVER,
- 				watch_connection( Connection, 
-								  fun(Name, Pid, Reason) -> 
-										on_connection_exception(Name, Pid, Reason)
-								  end),
-
- 			State#consumer_state.connection;
- 		Else -> erlang:send_after(?DELAY, self(), {reconnect})
+ 		true -> State#consumer_state.connection;
+ 		_Else -> erlang:send_after(?DELAY, self(), {reconnect})
  	end,
  	 
  	case is_alive(ConPid) of
