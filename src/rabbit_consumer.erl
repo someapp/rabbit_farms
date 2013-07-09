@@ -481,7 +481,7 @@ get_queue_config(Amqp_params) ->
 get_queue_binding_config(Amqp_params)-> 
 	rabbit_farms_config:get_queue_bind(Amqp_params).
 
--spect get_channel_pid(#'consumer_state'{}) -> pid() | {error, atom()}.
+-spec get_channel_pid(#'consumer_state'{}) -> pid() | {error, atom()}.
 get_channel_pid(State)->
 	ConPid = case is_alive(State#consumer_state.connection) of
  		true -> State#consumer_state.connection;
