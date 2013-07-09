@@ -159,7 +159,6 @@ ack(Channel, DeliveryTag) ->
 -spec subscribe(pid()) -> {ok, binary()} | error.
 do_subscribe(Channel, Queue, Pid) ->
     Method = #'basic.consume'{queue = Queue, no_ack = false},
-   
     #'basic.consume_ok'{consumer_tag = CTag} = amqp_channel:subscribe(Channel, Method, Pid),
     error_logger:info_msg("subscribe ok Ctag ~p on pid ~p",[CTag ,Pid]),
     CTag.
@@ -338,8 +337,9 @@ handle_cast(Info, State) ->
 
 handle_info({#'basic.consume_ok'{}}, State)->
 	{reply, ok, State};
-handle_info({#'basic.consume_ok'{}, _}, State)->
-	{reply, ok, State};
+handle_info({#'basic.consume_ok'{consumer_tag = CTag}, _}, State)->
+	error_logger:info_msg("Handle info consume_ok ~p",[CTag]),
+	{reply, CTag, State};
 handle_info(#'basic.cancel'{}, State) ->
     {noreply, State};
 handle_info({#'basic.cancel_ok'{}}, State)->
