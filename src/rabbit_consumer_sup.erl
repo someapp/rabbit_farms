@@ -11,6 +11,8 @@
 
 %% Helper macro for declaring children of supervisor
 -define(CHILD(Name, Mod, Type, Args), {Name, {Mod, start_link, Args}, permanent, 5000, Type, [Mod]}).
+-define(HowMany, 1000).
+-define(HowOften, 30).
 
 %% ===================================================================
 %% API functions
@@ -31,8 +33,7 @@ init(_Args) ->
 	ConfDir = "./conf",
 	FileName = "spark_consumer.config",
     Children = [
- %   		?CHILD(spark_app_config_sup, spark_app_config_sup,supervisor,[ConfDir, FileName]),
     		?CHILD([], rabbit_consumer, worker, 
          	[])],
-    {ok, { {one_for_one, 5, 10}, Children }}.
+    {ok, { {one_for_one, HowMany, HowOften}, Children }}.
 
