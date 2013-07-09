@@ -438,11 +438,13 @@ handle_info({'DOWN', _MRef, process, Pid, normal}, State) ->
 
 handle_info({'DOWN', _MRef, process, Pid, Info}, State) ->
 %    error_logger:error_msg("DOWN Pid ~p, Info ~p",[Pid, Info]),
+	io:format("Process ~p DOWN ~p",[Pid, Info]),
 	erlang:send_after(?RECON_TIMEOUT, self(), {init}),
     {noreply, State};
 
 handle_info({'EXIT', Pid, Reason}, State)->
 %	error_logger:error_msg("amqp connection ~p down ",[State#consumer_state.connection]),
+	io:format("Process ~p EXIT ~p",[Pid, Reason]),
 	erlang:send_after(?RECON_TIMEOUT, self(), {init}),
 	{noreply, State#consumer_state{
 		connection = undefined, 
@@ -526,7 +528,9 @@ get_queue_binding_config(Amqp_params)->
 get_channel_pid(State)->
     ConPid = State#consumer_state.connection,
     case channel_open(ConPid) of
-    	{ok, Pid} -> Pid;
+    	{ok, Pid} ->
+
+    				Pid;
     	R -> R
     end.
 
