@@ -407,6 +407,9 @@ process_message(chat,Payload, Module)->
 	{ResponstType, ResponsePayload} = Module:process_message(Payload),
 	{ResponstType, ResponsePayload};
 
+process_message(undefined, Payload, State)->
+	{cannot_process_message, undefined};
+
 process_message(ContentType, Payload, State)->
 	{cannot_process_message, ContentType}.
 
