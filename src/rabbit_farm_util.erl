@@ -13,9 +13,9 @@
 -include("rabbit_farms.hrl").
 -include("rabbit_farms_internal.hrl").
 -include_lib("lager/include/lager.hrl").
+-define(CONFPATH,"conf").
 
 -spec get_fun(cast, atom())-> fun().
-
 get_fun(cast, Method)->
 	fun(Channel)->
 
