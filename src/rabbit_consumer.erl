@@ -505,6 +505,7 @@ get_queue_binding_config(Amqp_params)->
 get_channel_pid(State)->
 	ConPid = case is_alive(State#consumer_state.connection) of
  		true -> Connection = State#consumer_state.connection,
+ 				Name = ?SERVER,
  				watch_connection( Connection, 
 								  fun(Pid, Reason) -> 
 										on_connection_exception(Name, Pid, Reason)
