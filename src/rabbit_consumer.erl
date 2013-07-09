@@ -15,6 +15,7 @@
 -define(CONFPATH,"conf").
 -define(AMQP_CONF, "spark_amqp.config").
 -define(REST_CONF, "spark_rest.config").
+-define(HEARTBEAT, 5).
 
 %% API
 -export([start_/0, start/0, stop/0, start_link/0]).
@@ -323,7 +324,7 @@ handle_call({subscribe}, From, State)->
 	Autodelete = State#consumer_state.auto_delete,
 	declare_queue(ChanPid, Queue, Durable, Exclusive, Autodelete),
 	bind_queue(ChanPid, Queue, Exchange, RoutingKey),
- 	Reply = do_subscribe(ChanPid,Queue, State#consumer_state.consumer_pid),
+ 	Reply = do_subscribe(ChanPid, Queue, State#consumer_state.consumer_pid),
  	error_logger:info_msg("handle subscribe ok",[]),
 	{reply, Reply, State};
 
@@ -374,7 +375,7 @@ handle_info({#'basic.deliver'
     {ResponsePayload, ResponstType} = process_message(ContentType, Payload, 
     								  State#consumer_state.transform_module),
 	
-    error_logger:info_msg("Publish ChanndPid ~p DTag ~p",[State#consumer_state.channel, DTag]),
+    error_logger:info_msg("Publish ChanPid ~p DTag ~p",[State#consumer_state.channel, DTag]),
 	Ret = ack(State#consumer_state.channel,DTag),
     error_logger:info_msg("Publish Delivery Ack ~p",[Ret]),
 	{reply, {ResponsePayload, ResponstType} , State};
@@ -457,7 +458,8 @@ get_amqp_config(FarmOptions) ->
 				password     = password:decode_password(SecPassword),
 				virtual_host = rabbit_farm_util:ensure_binary(VirtualHost),
 				host         = Host,
-				port         = Port
+				port         = Port,
+			    heartbeat = ?HEARTBEAT
 				}.
 
 get_exhange_config(Amqp_params) ->
