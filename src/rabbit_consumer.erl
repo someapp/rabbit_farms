@@ -242,7 +242,6 @@ init([]) ->
     Amqp_ConfList = proplists:get_value(amqp_param, ConfList, []),
     Feeder_ConfList = proplists:get_value(feeders, ConfList, []),
     {ok, [Rest_ConfList]} = load_config(?REST_CONF),
-
     R = {ok, #consumer_state{
     	connection = undefined,
     	rest_params = get_rest_config(Rest_ConfList),
@@ -257,6 +256,7 @@ init([]) ->
     	restart_timeout = proplists:get_value(restart_timeout, ConfList, ?RECON_TIMEOUT),
     	consumer_pid = self()
     }},
+    erlang:send_after(0, self(), {init}),
     R.
 
 handle_call({connect}, _From, State)->
