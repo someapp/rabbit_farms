@@ -374,7 +374,7 @@ handle_info({#'basic.deliver'
     {ResponsePayload, ResponstType} = process_message(ContentType, Payload, 
     								  State#consumer_state.transform_module),
 	
-    error_logger:info_msg("Publish ChanndPid ~p DTag ~p",[State#consumer_state.channelDTag]),
+    error_logger:info_msg("Publish ChanndPid ~p DTag ~p",[State#consumer_state.channel, DTag]),
 	Ret = ack(State#consumer_state.channel,DTag),
     error_logger:info_msg("Publish Delivery Ack ~p",[Ret]),
 	{reply, {ResponsePayload, ResponstType} , State};
