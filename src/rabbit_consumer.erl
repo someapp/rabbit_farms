@@ -366,6 +366,21 @@ handle_cast(Info, State) ->
 	erlang:display(Info),
     {noreply, State}.
 
+handle_info({init}, State) ->
+	Amqp_params = State#consumer_state.amqp_params,
+	ConPid = 
+	case connection_start(Amqp_params) of
+		{ok, Connection} -> 
+					Name = ?SERVER,
+ 					watch_connection(Connection, 
+								  fun(Name, Pid, Reason) -> 
+										on_connection_exception(Name, Pid, Reason)
+								  end);
+
+ 		_ -> undefined
+ 	end,
+	{noreply, NewState#consumer_state{connection=ConPid}};
+
 handle_info({#'basic.consume_ok'{}}, State)->
 	{reply, ok, State};
 handle_info({#'basic.consume_ok'{consumer_tag = CTag}, _}, State)->
@@ -505,7 +520,7 @@ get_channel_pid(State)->
 								  end),
 
  			State#consumer_state.connection;
- 		Else -> erlang:send_after(?DELAY, self(), {connect})
+ 		Else -> erlang:send_after(?DELAY, self(), {reconnect})
  	end,
  	 
  	case is_alive(ConPid) of
