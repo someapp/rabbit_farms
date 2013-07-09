@@ -325,7 +325,7 @@ handle_call({subscribe}, From, State)->
 	declare_queue(ChanPid, Queue, Durable, Exclusive, Autodelete),
 	bind_queue(ChanPid, Queue, Exchange, RoutingKey),
  	Reply = do_subscribe(ChanPid, Queue, State#consumer_state.consumer_pid),
- 	error_logger:info_msg("handle subscribe ok",[]),
+ 	error_logger:info_msg("handle subscribe ok ~p",[Reply]),
 	{reply, Reply, State};
 
 handle_call(_Request, _From, State) ->
@@ -372,13 +372,13 @@ handle_info({#'basic.deliver'
     	content_type = ContentType
     } = Props,
 
-    {ResponsePayload, ResponstType} = process_message(ContentType, Payload, 
+    {ResponstType, ResponsePayload} = process_message(ContentType, Payload, 
     								  State#consumer_state.transform_module),
 	
     error_logger:info_msg("Publish ChanPid ~p DTag ~p",[State#consumer_state.channel, DTag]),
 	Ret = ack(State#consumer_state.channel,DTag),
     error_logger:info_msg("Publish Delivery Ack ~p",[Ret]),
-	{reply, {ResponsePayload, ResponstType} , State};
+	{noreply, State};
 
 handle_info({Any,
 			 Content}, State
