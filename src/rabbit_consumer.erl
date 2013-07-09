@@ -364,6 +364,7 @@ handle_info({#'basic.deliver'
     } = Props,
     {ResponsePayload, ResponstType} = process_message(ContentType, Payload, 
     								  State#consumer_state.transform_module),
+	Ret = ack(State#consumer_state.channel,DTag),
 	{reply, {ResponsePayload, ResponstType} , State};
 
 handle_info({Any,
