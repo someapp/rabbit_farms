@@ -370,7 +370,7 @@ handle_info({Any,
 			 Content}, State
 			) ->
 	error_logger:info_msg("Any message ~p~n, Any conntent ~p~n",[Any, Content]),
-	{reply, ok , State};
+	{noreply, State};
 
 handle_info({Any}, State
 			) ->
