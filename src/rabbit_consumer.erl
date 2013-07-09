@@ -137,10 +137,11 @@ connection_close(ConPid, Timeout) ->
 -spec channel_open(pid()) -> {'ok', pid()} | {'error', any()}.
 channel_open(undefined) -> {ok, undefined};
 channel_open(ConPid) ->
-	case is_alive(ConPid) of
-		true-> amqp_connection:open_channel(ConPid);
-		Why -> Why
-    end.
+    amqp_connection:open_channel(ConPid).
+%	case is_alive(ConPid) of
+%		true-> amqp_connection:open_channel(ConPid);
+%		Why -> Why
+%    end.
 
 -spec channel_close(pid()) -> {'ok', pid()} | {'error', any()}.
 channel_close(undefined) -> ok;
