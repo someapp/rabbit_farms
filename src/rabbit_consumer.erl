@@ -532,7 +532,7 @@ cwd()->
   {ok, Cwd} = file:get_cwd(),
   {ok, lists:concat([Cwd,"/",?CONFPATH])}.
 
--spec os_now() -> datetime1970().
+-spec os_now() -> calendar:datetime1970().
 os_now()->
   R =os:timestamp(),
   calendar:now_to_universal_time(R).
