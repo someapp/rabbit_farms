@@ -260,34 +260,48 @@ handle_call({connect}, _From, State)->
 		State#consumer_state{connection=ConPid}};
 
 handle_call({open_channel}, _From, State)->
+	Start = os_now(),
  	ConPid = State#consumer_state.connection,
  	error_logger:info_msg("Connection Pid ~p, is_alive? ~p",
  		[ConPid, is_alive(ConPid)]),
  	{ok, ChanPid} = channel_open(ConPid),
- 	error_logger:info_msg("Connected Channel ~p",[ChanPid]),
+ 	End = os_now(),
+ 	TSpan = time_differnce(Start, End),
+ 	error_logger:info_msg("Connected Channel ~p. Timespan ~p",[ChanPid, TSpan]),
 	{reply, ChanPid, 
 		State#consumer_state{channel=ChanPid}};		
 
 handle_call({close_channel}, _From, State)->
+ 	Start = os_now(),
  	ChanPid = State#consumer_state.channel,
  	error_logger:info_msg("Channel Pid ~p, is_alive? ~p",
  		[ChanPid, is_alive(ChanPid)]),
  	R = channel_close(ChanPid),
- 	error_logger:info_msg("Closed Channel: Ret: ~p",[R]),
+ 	End = os_now(),
+ 	TSpan = time_differnce(Start, End),
+ 	error_logger:info_msg("Closed Channel: Ret: ~p. Timespan ~p",[R, TSpan]),
 	{reply, closed_channel, 
 		State#consumer_state{channel=undef}};		
 
 handle_call({reconnect}, _From, State)->
+	Start = os_now(),
 	gen_server:call(?SERVER, {disconnect}),
 	Reply = gen_server:call(?SERVER, {connect}),
+	End = os_now(),
+	TSpan = time_differnce(Start, End),
+	error_logger:info_msg("Reconnect ~p. Timespan: ~p",[R2, TSpan]),
+
 	{reply, Reply, State};
 
 handle_call({disconnect}, _From, State)->
+	Start = os_now(),
 	error_logger:info_msg("Disconnecting ....",[]),
 	R1 = channel_close(State#consumer_state.channel),
 	error_logger:info_msg("Disconnected Channel ~p",[R1]),
 	R2 = connection_close(State#consumer_state.connection),
-	error_logger:info_msg("Disconnected Connection ~p",[R2]),
+	End = os_now(),
+    TSpan = time_differnce(Start, End),
+	error_logger:info_msg("Disconnected Connection ~p. Timespan: ~p",[R2, TSpan]),
 	{reply, {ok, disconnected}, 
 		State#consumer_state{
 		connection = undef, 
@@ -313,6 +327,7 @@ handle_call({register_callback, Module},
 	{reply, ok, State};
 
 handle_call({subscribe}, From, State)->
+	Start = os_now(),
 	ConPid = State#consumer_state.connection,
 	ChanPid = State#consumer_state.channel,
 %	{ok, ChanPid} = channel_open(ConPid),
@@ -325,7 +340,9 @@ handle_call({subscribe}, From, State)->
 	declare_queue(ChanPid, Queue, Durable, Exclusive, Autodelete),
 	bind_queue(ChanPid, Queue, Exchange, RoutingKey),
  	Reply = do_subscribe(ChanPid, Queue, State#consumer_state.consumer_pid),
- 	error_logger:info_msg("handle subscribe ok ~p",[Reply]),
+	End = os_now(),
+	TSpan = time_differnce(Start, End),
+ 	error_logger:info_msg("handle subscribe ok ~p. Timespan: ~p",[Reply, TSpan]),
 	{reply, Reply, State};
 
 handle_call(_Request, _From, State) ->
@@ -356,18 +373,8 @@ handle_info({#'basic.deliver'
 			  },
 			 Content}, State
 			) ->
+	Start = os_now(),
     #amqp_msg{props = Props, payload = Payload} = Content,
-%   #'P_basic'{
-%   	content_type = ContentType,
-%   	content_encoding, headers, 
-%   	delivery_mode, priority, 
-%   	correlation_id, 
-%       reply_to = ReplyTo,
-%   	message_id = MsgId,
-%   	timestamp = TimeStamp,
-%   	type, user_id, app_id, cluster_id
-%   } = Props,
-
     #'P_basic'{
     	content_type = ContentType
     } = Props,
@@ -377,18 +384,17 @@ handle_info({#'basic.deliver'
 	
     error_logger:info_msg("Publish ChanPid ~p DTag ~p",[State#consumer_state.channel, DTag]),
 	Ret = ack(State#consumer_state.channel,DTag),
-    error_logger:info_msg("Publish Delivery Ack ~p",[Ret]),
+    End = os_now(),
+    TSpan = time_differnce(Start, End),
+    error_logger:info_msg("Publish Delivery Ack ~p. Timespan: ~p",[Ret, TSpan]),
 	{noreply, State};
 
-handle_info({Any,
-			 Content}, State
-			) ->
-	error_logger:info_msg("Any message ~p~n, Any conntent ~p~n",[Any, Content]),
+handle_info({Any, Content}, State) ->
+	error_logger:info_msg("Unsupported message ~p, unknown conntent ~p~n",[Any, Content]),
 	{noreply, State};
 
-handle_info({Any}, State
-			) ->
-	error_logger:info_msg("Any message ~p~n",[Any]),
+handle_info({Any}, State) ->
+	error_logger:info_msg("Unsupported message ~p",[Any]),
 	{noreply, State};
 
 handle_info({'DOWN', _MRef, process, Pid, Info}, State) ->
@@ -502,3 +508,10 @@ load_config(ConfDir,File) when is_list(ConfDir),
 cwd()->
   {ok, Cwd} = file:get_cwd(),
   {ok, lists:concat([Cwd,"/",?CONFPATH])}.
+
+os_now()->
+  R =os:timestamp(),
+  calendar:now_to_localtime(R).
+
+timespan(A,B)->
+  calendar:time_differnce(A,B).
