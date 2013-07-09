@@ -418,7 +418,7 @@ handle_info({#'basic.deliver'
     								  State#consumer_state.transform_module),
 	
     error_logger:info_msg("Publish ChanPid ~p DTag ~p MessageId ~p Redeliver ~p",[State#consumer_state.channel, 
-    			DTag, MessageId, Redeliver]),
+    			DTag, MessageId, Redelivered]),
 	Ret = ack(State#consumer_state.channel,DTag),
     End = rabbit_farm_util:os_now(),
     TSpan = rabbit_farm_util:timespan(Start, End),
