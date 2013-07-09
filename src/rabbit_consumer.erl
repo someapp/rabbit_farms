@@ -500,7 +500,7 @@ get_channel_pid(State)->
  		true -> Connection = State#consumer_state.connection,
  				Name = ?SERVER,
  				watch_connection( Connection, 
-								  fun(Pid, Reason) -> 
+								  fun(Name, Pid, Reason) -> 
 										on_connection_exception(Name, Pid, Reason)
 								  end),
 
