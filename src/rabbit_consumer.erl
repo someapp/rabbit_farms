@@ -202,7 +202,7 @@ declare_queue(Channel, Queue, Durable, Exclusive, Autodelete) ->
     error_logger:info_msg("Queue declared OK Q:~p",[Queue]),
     ok.
 
-
+-spec bind_queue(pid(), binary(), binary(), binary()) -> ok.
 bind_queue(Channel, Queue, Exchange, RoutingKey)->
 	Method = #'queue.bind'{
 					queue = Queue,
@@ -433,10 +433,12 @@ process_message(undefined, Payload, State)->
 process_message(ContentType, Payload, State)->
 	{cannot_process_message, ContentType}.
 
+-spec is_alive(pid() | atom()) -> true | false.
 is_alive(undef) -> false;
 is_alive(P)->
  	erlang:is_process_alive(P).
 
+-spec get_rest_config(list()) -> #spark_restc_config{}.
 get_rest_config(Rest_ConfList)->
    	#spark_restc_config {
     	spark_api_endpoint = proplists:get_value(spark_api_endpoint, Rest_ConfList),
@@ -467,16 +469,19 @@ get_amqp_config(FarmOptions) ->
 				port         = Port,
 			    heartbeat = ?HEARTBEAT
 				}.
-
+-spec get_exhange_config(list())-> #'exchange.declare'{}.
 get_exhange_config(Amqp_params) ->
 	rabbit_farms_config:get_exchange_setting(Amqp_params).
 
-get_queue_config(Amqp_params) ->
+-spec get_queue_config(list()) -> #'queue.declare'{}.
+get_queue_config(Amqp_params) -> 
 	rabbit_farms_config:get_queue_setting(Amqp_params).
 
+-spec get_queue_binding_config(list()) ->#'queue.bind'{}.
 get_queue_binding_config(Amqp_params)-> 
 	rabbit_farms_config:get_queue_bind(Amqp_params).
 
+-spect get_channel_pid(#'consumer_state{}') -> pid() | {error, atom()}.
 get_channel_pid(State)->
 	ConPid = case is_alive(State#consumer_state.connection) of
  		true -> State#consumer_state.connection;
@@ -489,15 +494,17 @@ get_channel_pid(State)->
  		_Reason -> {error, channel_closed}
  	end.
 
-
+-spec load_config()-> list().
 load_config()->
   {ok, ConfDir}= cwd(),
   load_config(ConfDir, "spark_consumer.config").
 
+-spec load_config(string())-> list().
 load_config(File) ->
   {ok, ConfDir}= cwd(),
   load_config(ConfDir,File).
 
+-spec load_config(string(), string())-> list().
 load_config(ConfDir,File) when is_list(ConfDir), 
 			  is_list(File)->
   FileFullPath = lists:concat([ConfDir,"/", File]),
@@ -505,13 +512,16 @@ load_config(ConfDir,File) when is_list(ConfDir),
   {ok, [ConfList]}= file:consult(FileFullPath),
   {ok, [ConfList]}.
 
+-spec cwd()-> {ok, string()}.
 cwd()->
   {ok, Cwd} = file:get_cwd(),
   {ok, lists:concat([Cwd,"/",?CONFPATH])}.
 
+-spec os_now() -> timestamp().
 os_now()->
   R =os:timestamp(),
   calendar:now_to_universal_time(R).
 
+-spec timespan(timestamp(), timestamp())-> timestamp().
 timespan(A,B)->
   calendar:time_difference(A,B).
