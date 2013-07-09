@@ -176,13 +176,6 @@ do_subscribe(Channel, Queue, Pid) ->
     #'basic.consume_ok'{consumer_tag = CTag} = amqp_channel:subscribe(Channel, Method, Pid),
     error_logger:info_msg("subscribe ok Ctag ~p on pid ~p",[CTag ,Pid]),
     CTag.
-%    receive
-%        #'basic.consume_ok'{consumer_tag = CTag} -> {ok, CTag};
-%        Unknown -> error_logger:info_msg("Receive unknown message format ~p",[Unknown]), 
-%        		  {ok, Unknown}
-%    after
-%        ?RESPONSE_TIMEOUT -> {error, timeout}
-%    end.
 
 -spec unsubscribe(pid(), binary()) -> ok | error.
 unsubscribe(Channel, CTag) ->
@@ -554,6 +547,7 @@ timespan(A,B)->
   calendar:time_difference(A,B).
 
 on_connection_exception(Name, Pid, Reason)->
+	%TODO make this pluggable for more intelligent dealing
 	gen_server:cast(Name,{on_connection_die,Reason}),
 	error_logger:error("connection_pid: ~p reason: ~p",[Pid,Reason]).
 
