@@ -358,9 +358,17 @@ handle_info({#'basic.deliver'
     #amqp_msg{payload = Payload, props = Props} = Content,
     #'P_basic'{
     	content_type = ContentType,
+    	content_encoding, 
+    	headers,
+    	delivery_mode,
+		priority,
+		correlation_id, 
+		reply_to, 
+		expiration, 
+		reply_to = ReplyTo,
     	message_id = MsgId,
-    	reply_to = ReplyTo,
-    	timestamp = TimeStamp
+    	timestamp = TimeStamp,
+    	type, user_id, app_id, cluster_id
     } = Props,
     {ResponsePayload, ResponstType} = process_message(ContentType, Payload, 
     								  State#consumer_state.transform_module),
