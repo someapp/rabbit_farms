@@ -116,14 +116,14 @@ connection_start(Amqp_params_network)
 	amqp_connection:start(Amqp_params_network).
 
 -spec connection_close(pid()) -> 'ok'.
-connection_close(undef) -> undef;
+connection_close(undefined) -> undefined;
 connection_close(ConPid) ->
 	case is_alive(ConPid) of
 		true-> amqp_connection:close(ConPid);
 		Why -> Why
     end.
 -spec connection_close(pid(), pos_integer()) -> 'ok'.
-connection_close(undef, _) -> undef;
+connection_close(undefined, _) -> undefined;
 connection_close(ConPid, Timeout) ->
 	case is_alive(ConPid) of
 		true-> amqp_connection:close(ConPid, Timeout);
@@ -135,7 +135,7 @@ connection_close(ConPid, Timeout) ->
 %% -------------------------------------------------------------------------
 
 -spec channel_open(pid()) -> {'ok', pid()} | {'error', any()}.
-channel_open(undef) -> {ok, undef};
+channel_open(undefined) -> {ok, undefined};
 channel_open(ConPid) ->
 	case is_alive(ConPid) of
 		true-> amqp_connection:open_channel(ConPid);
@@ -143,7 +143,7 @@ channel_open(ConPid) ->
     end.
 
 -spec channel_close(pid()) -> {'ok', pid()} | {'error', any()}.
-channel_close(undef) -> ok;
+channel_close(undefined) -> ok;
 channel_close(ChanPid) ->
 	case is_alive(ChanPid) of
 		true-> amqp_channel:close(ChanPid);
@@ -251,7 +251,7 @@ init([]) ->
     {ok, [Rest_ConfList]} = load_config(?REST_CONF),
 
     R = {ok, #consumer_state{
-    	connection = undef,
+    	connection = undefined,
     	rest_params = get_rest_config(Rest_ConfList),
     	amqp_params = get_amqp_config(Amqp_ConfList),
     	exchange = proplists:get_value(exchange, Feeder_ConfList, <<"im.conversation">>),
@@ -260,7 +260,7 @@ init([]) ->
     	durable = proplists:get_value(durable,Feeder_ConfList, false),
  		exclusive = proplists:get_value(exclusive,Feeder_ConfList, false),
 		auto_delete = proplists:get_value(auto_delete,Feeder_ConfList,false),
-    	transform_module = proplists:get_value(transform_module, ConfList, undef),
+    	transform_module = proplists:get_value(transform_module, ConfList, undefined),
     	restart_timeout = proplists:get_value(restart_timeout, ConfList, ?RECON_TIMEOUT),
     	consumer_pid = self()
     }},
@@ -275,10 +275,6 @@ handle_call({connect}, _From, State)->
 handle_call({open_channel}, _From, State)->
 	Start = os_now(),
 	ChanPid =get_channel_pid(State),
-% 	ConPid = State#consumer_state.connection,
-% 	error_logger:info_msg("Connection Pid ~p, is_alive? ~p",
-% 		[ConPid, is_alive(ConPid)]),
-% 	{ok, ChanPid} = channel_open(ConPid),
  	End = os_now(),
  	TSpan = timespan(Start, End),
  	error_logger:info_msg("Connected Channel ~p. Timespan ~p",[ChanPid, TSpan]),
@@ -295,7 +291,7 @@ handle_call({close_channel}, _From, State)->
  	TSpan = timespan(Start, End),
  	error_logger:info_msg("Closed Channel: Ret: ~p. Timespan ~p",[R, TSpan]),
 	{reply, closed_channel, 
-		State#consumer_state{channel=undef}};		
+		State#consumer_state{channel=undefined}};		
 
 handle_call({reconnect}, _From, State)->
 	Start = os_now(),
@@ -318,10 +314,10 @@ handle_call({disconnect}, _From, State)->
 	error_logger:info_msg("Disconnected Connection ~p. Timespan: ~p",[R2, TSpan]),
 	{reply, {ok, disconnected}, 
 		State#consumer_state{
-		connection = undef, 
-		connection_ref = undef,
-		channel = undef,
-		channel_ref =undef}
+		connection = undefined, 
+		connection_ref = undefined,
+		channel = undefined,
+		channel_ref =undefined}
 	};
 
 handle_call({stop, Reason}, _From, State)->
@@ -342,9 +338,6 @@ handle_call({register_callback, Module},
 
 handle_call({subscribe}, _From, State)->
 	Start = os_now(),
-%	ConPid = State#consumer_state.connection,
-%	ChanPid = State#consumer_state.channel,
-%	{ok, ChanPid} = channel_open(ConPid),
 	ChanPid =get_channel_pid(State),
 	Queue = State#consumer_state.queue,
 	Exchange = State#consumer_state.exchange,
@@ -363,6 +356,18 @@ handle_call({subscribe}, _From, State)->
 handle_call(_Request, _From, State) ->
     Reply = {error, function_clause},
     {reply, Reply, State}.
+
+handle_cast({on_connection_die, Reason}, State)->
+	NewState = State#consumer_state{connection=undefined, channel=undefined},
+	Server = self(),
+    spawn_link(fun()->
+		try 
+			erlang:send_after(?RECON_TIMEOUT, Server, {reconnect})
+	    catch
+	    	Class:Reason -> {Class, Reason} 
+	    end
+  	end),
+    {noreply, NewState};
 
 handle_cast(Info, State) ->
 	erlang:display(Info),
@@ -419,10 +424,10 @@ handle_info({'DOWN', _MRef, process, Pid, Info}, State) ->
 handle_info({'EXIT', Pid, Reason}, State)->
 	error_logger:error("amqp connection (~p) down ",[State#consumer_state.connection]),
 	{noreply, State#consumer_state{
-		connection = undef, 
-		connection_ref = undef,
-		channel = undef,
-		channel_ref =undef}
+		connection = undefined, 
+		connection_ref = undefined,
+		channel = undefined,
+		channel_ref =undefined}
 	};
 
 handle_info(_Info, State) ->
@@ -449,7 +454,7 @@ process_message(ContentType, Payload, State)->
 	{cannot_process_message, ContentType}.
 
 -spec is_alive(pid() | atom()) -> true | false.
-is_alive(undef) -> false;
+is_alive(undefined) -> false;
 is_alive(P)->
  	erlang:is_process_alive(P).
 
@@ -499,7 +504,13 @@ get_queue_binding_config(Amqp_params)->
 -spec get_channel_pid(#'consumer_state'{}) -> pid() | {error, atom()}.
 get_channel_pid(State)->
 	ConPid = case is_alive(State#consumer_state.connection) of
- 		true -> State#consumer_state.connection;
+ 		true -> Connection = State#consumer_state.connection,
+ 				watch_connection( Connection, 
+								  fun(Pid, Reason) -> 
+										on_connection_exception(Name, Pid, Reason)
+								  end),
+
+ 			State#consumer_state.connection;
  		Else -> erlang:send_after(?DELAY, self(), {connect})
  	end,
  	 
@@ -540,3 +551,18 @@ os_now()->
 -spec timespan( calendar:datetime1970(), calendar:datetime1970())-> calendar:datetime1970().
 timespan(A,B)->
   calendar:time_difference(A,B).
+
+on_connection_exception(Name, Pid, Reason)->
+	gen_server:cast(Name,{on_connection_die,Reason}),
+	error_logger:error("connection_pid: ~p reason: ~p",[Pid,Reason]).
+
+watch_connection(ConPid, Fun) when  is_pid(ConPid) ->
+	 Name = ?SERVER,
+	 spawn_link(fun() ->
+				process_flag(trap_exit, true),
+				link(ConPid),
+			 	receive
+			 		{'EXIT', ConPid, Reason} -> 
+			 			Fun(Name, ConPid, Reason)
+	 			end
+ 	end).
