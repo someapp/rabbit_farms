@@ -58,7 +58,7 @@ start()->
 stop()->
  	gen_server:call(?SERVER,{stop, normal}).
 
--spec start() -> pid().
+-spec start_link() -> pid().
 start_link() ->
     gen_server:start_link({local, ?SERVER}, ?MODULE, [], []).
 
@@ -94,7 +94,7 @@ reconnect()->
 disconnect()->
 	gen_server:call(?SERVER, {disconnect}).
 
--spec subscribe() -> ok.
+-spec subscribe(call|cast) -> ok.
 subscribe(call)  ->
 	gen_server:call(?SERVER, {subscribe});
 
@@ -324,7 +324,7 @@ handle_call({disconnect}, _From, State)->
 		channel_ref =undef}
 	};
 
-handle_call({stop, Reason}, From, State)->
+handle_call({stop, Reason}, _From, State)->
  	error_logger:info_msg("Rabbit Consumers stopping with reason ~p ",[Reason]),
 	Reply = terminate(Reason, State),
 	{reply, Reply, State};
@@ -336,11 +336,11 @@ handle_call({ping}, _From, State)->
 	{reply, {ok, pong}, State};
 
 handle_call({register_callback, Module},
-			 From, State) ->
+			 _From, State) ->
 	State#consumer_state{transform_module = Module},
 	{reply, ok, State};
 
-handle_call({subscribe}, From, State)->
+handle_call({subscribe}, _From, State)->
 	Start = os_now(),
 %	ConPid = State#consumer_state.connection,
 %	ChanPid = State#consumer_state.channel,
@@ -537,6 +537,6 @@ os_now()->
   R =os:timestamp(),
   calendar:now_to_universal_time(R).
 
--spec timespan(datetime1970(), datetime1970(),datetime1970())-> datetime1970().
+-spec timespan(datetime1970(), datetime1970())-> datetime1970().
 timespan(A,B)->
   calendar:time_difference(A,B).
