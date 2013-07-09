@@ -532,11 +532,11 @@ cwd()->
   {ok, Cwd} = file:get_cwd(),
   {ok, lists:concat([Cwd,"/",?CONFPATH])}.
 
--spec os_now() -> calendar::datetime1970().
+-spec os_now() -> datetime1970().
 os_now()->
   R =os:timestamp(),
   calendar:now_to_universal_time(R).
 
--spec timespan(calendar::datetime1970(), calendar::datetime1970(),calendar::datetime1970())-> calendar::datetime1970().
+-spec timespan(datetime1970(), datetime1970(),datetime1970())-> datetime1970().
 timespan(A,B)->
   calendar:time_difference(A,B).
