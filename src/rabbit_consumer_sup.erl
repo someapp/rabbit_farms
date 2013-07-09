@@ -30,10 +30,8 @@ start_link(RabbitFarmModel) ->
 init()-> init([]).
 -spec init(list())-> {ok, term()} | {error, term()}.
 init(_Args) ->
-	ConfDir = "./conf",
-	FileName = "spark_consumer.config",
     Children = [
     		?CHILD([], rabbit_consumer, worker, 
          	[])],
-    {ok, { {one_for_one, HowMany, HowOften}, Children }}.
+    {ok, { {one_for_one, ?HowMany, ?HowOften}, Children }}.
 
