@@ -433,11 +433,11 @@ handle_info({Any}, State) ->
 	{noreply, State};
 
 handle_info({'DOWN', _MRef, process, Pid, Info}, State) ->
-    error_logger:error("DOWN Pid ~p, Info ~p",[Pid, Info]),
+    error_logger:error_msg("DOWN Pid ~p, Info ~p",[Pid, Info]),
     {noreply, State};
 
 handle_info({'EXIT', Pid, Reason}, State)->
-	error_logger:error("amqp connection (~p) down ",[State#consumer_state.connection]),
+	error_logger:error_msg("amqp connection (~p) down ",[State#consumer_state.connection]),
 	{noreply, State#consumer_state{
 		connection = undefined, 
 		connection_ref = undefined,
@@ -564,7 +564,7 @@ timespan(A,B)->
 on_connection_exception(Name, Pid, Reason)->
 	%TODO make this pluggable for more intelligent dealing
 	gen_server:cast(Name,{on_connection_die,Reason}),
-	error_logger:error("connection_pid: ~p reason: ~p",[Pid,Reason]).
+	error_logger:error_msg("connection_pid: ~p reason: ~p",[Pid,Reason]).
 
 watch_connection(ConPid, Fun) when  is_pid(ConPid) ->
 	 Name = ?SERVER,
