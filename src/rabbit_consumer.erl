@@ -266,7 +266,7 @@ handle_call({open_channel}, _From, State)->
  		[ConPid, is_alive(ConPid)]),
  	{ok, ChanPid} = channel_open(ConPid),
  	End = os_now(),
- 	TSpan = time_differnce(Start, End),
+ 	TSpan = timespan(Start, End),
  	error_logger:info_msg("Connected Channel ~p. Timespan ~p",[ChanPid, TSpan]),
 	{reply, ChanPid, 
 		State#consumer_state{channel=ChanPid}};		
@@ -278,7 +278,7 @@ handle_call({close_channel}, _From, State)->
  		[ChanPid, is_alive(ChanPid)]),
  	R = channel_close(ChanPid),
  	End = os_now(),
- 	TSpan = time_differnce(Start, End),
+ 	TSpan = timespan(Start, End),
  	error_logger:info_msg("Closed Channel: Ret: ~p. Timespan ~p",[R, TSpan]),
 	{reply, closed_channel, 
 		State#consumer_state{channel=undef}};		
@@ -288,8 +288,8 @@ handle_call({reconnect}, _From, State)->
 	gen_server:call(?SERVER, {disconnect}),
 	Reply = gen_server:call(?SERVER, {connect}),
 	End = os_now(),
-	TSpan = time_differnce(Start, End),
-	error_logger:info_msg("Reconnect ~p. Timespan: ~p",[R2, TSpan]),
+	TSpan = timespan(Start, End),
+	error_logger:info_msg("Reconnect ~p. Timespan: ~p",[Reply, TSpan]),
 
 	{reply, Reply, State};
 
@@ -300,7 +300,7 @@ handle_call({disconnect}, _From, State)->
 	error_logger:info_msg("Disconnected Channel ~p",[R1]),
 	R2 = connection_close(State#consumer_state.connection),
 	End = os_now(),
-    TSpan = time_differnce(Start, End),
+    TSpan = timespan(Start, End),
 	error_logger:info_msg("Disconnected Connection ~p. Timespan: ~p",[R2, TSpan]),
 	{reply, {ok, disconnected}, 
 		State#consumer_state{
@@ -341,7 +341,7 @@ handle_call({subscribe}, From, State)->
 	bind_queue(ChanPid, Queue, Exchange, RoutingKey),
  	Reply = do_subscribe(ChanPid, Queue, State#consumer_state.consumer_pid),
 	End = os_now(),
-	TSpan = time_differnce(Start, End),
+	TSpan = timespan(Start, End),
  	error_logger:info_msg("handle subscribe ok ~p. Timespan: ~p",[Reply, TSpan]),
 	{reply, Reply, State};
 
@@ -385,7 +385,7 @@ handle_info({#'basic.deliver'
     error_logger:info_msg("Publish ChanPid ~p DTag ~p",[State#consumer_state.channel, DTag]),
 	Ret = ack(State#consumer_state.channel,DTag),
     End = os_now(),
-    TSpan = time_differnce(Start, End),
+    TSpan = timespan(Start, End),
     error_logger:info_msg("Publish Delivery Ack ~p. Timespan: ~p",[Ret, TSpan]),
 	{noreply, State};
 
@@ -514,4 +514,4 @@ os_now()->
   calendar:now_to_localtime(R).
 
 timespan(A,B)->
-  calendar:time_differnce(A,B).
+  calendar:time_difference(A,B).
