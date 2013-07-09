@@ -410,13 +410,15 @@ handle_info({#'basic.deliver'
 	Start = rabbit_farm_util:os_now(),
     #amqp_msg{props = Props, payload = Payload} = Content,
     #'P_basic'{
-    	content_type = ContentType
+    	content_type = ContentType,
+    	message_id = MessageId
     } = Props,
 
     {ResponstType, ResponsePayload} = process_message(ContentType, Payload, 
     								  State#consumer_state.transform_module),
 	
-    error_logger:info_msg("Publish ChanPid ~p DTag ~p",[State#consumer_state.channel, DTag]),
+    error_logger:info_msg("Publish ChanPid ~p DTag ~p MessageId ~p Redeliver ~p",[State#consumer_state.channel, 
+    			DTag, MessageId, Redeliver]),
 	Ret = ack(State#consumer_state.channel,DTag),
     End = rabbit_farm_util:os_now(),
     TSpan = rabbit_farm_util:timespan(Start, End),
