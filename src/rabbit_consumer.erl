@@ -355,7 +355,7 @@ handle_info({#'basic.deliver'
 			  },
 			 Content}, State
 			) ->
-    #amqp_msg{sprops = Props, payload = Payload} = Content,
+    #amqp_msg{props = Props, payload = Payload} = Content,
 %   #'P_basic'{
 %   	content_type = ContentType,
 %   	content_encoding, headers, 
@@ -370,6 +370,7 @@ handle_info({#'basic.deliver'
     #'P_basic'{
     	content_type = ContentType
     } = Props,
+
     {ResponsePayload, ResponstType} = process_message(ContentType, Payload, 
     								  State#consumer_state.transform_module),
 	Ret = ack(State#consumer_state.channel,DTag),
