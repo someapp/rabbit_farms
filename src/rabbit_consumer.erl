@@ -408,7 +408,7 @@ process_message(chat,Payload, Module)->
 	{ResponstType, ResponsePayload};
 
 process_message(ContentType, Payload, State)->
-	{unsupported, ContentType}.
+	{cannot_process_message, ContentType}.
 
 is_alive(undef) -> false;
 is_alive(P)->
