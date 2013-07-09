@@ -511,7 +511,7 @@ cwd()->
 
 os_now()->
   R =os:timestamp(),
-  calendar:now_to_localtime(R).
+  calendar:now_to_universal_time(R).
 
 timespan(A,B)->
   calendar:time_difference(A,B).
