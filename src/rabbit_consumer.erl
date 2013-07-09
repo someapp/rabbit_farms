@@ -263,11 +263,11 @@ handle_call({connect}, _From, State)->
  	{ok, ConPid} = connection_start(State#consumer_state.amqp_params),
  	error_logger:info_msg("Established connection",[]),
 
-	Name = ?SERVER,
-	watch_connection(ConPid, 
-		             fun(Name, Pid, Reason) -> 
-   						on_connection_exception(Name, Pid, Reason)
-								  end),
+%	Name = ?SERVER,
+%	watch_connection(ConPid, 
+%		             fun(Name, Pid, Reason) -> 
+%   						on_connection_exception(Name, Pid, Reason)
+%								  end),
 	{reply, ConPid, 
 		State#consumer_state{connection=ConPid}};
 
