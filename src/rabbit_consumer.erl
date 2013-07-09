@@ -256,12 +256,18 @@ init([]) ->
     	restart_timeout = proplists:get_value(restart_timeout, ConfList, ?RECON_TIMEOUT),
     	consumer_pid = self()
     }},
-    erlang:send_after(0, self(), {init}),
+%    erlang:send_after(0, self(), {init}),
     R.
 
 handle_call({connect}, _From, State)->
  	{ok, ConPid} = connection_start(State#consumer_state.amqp_params),
  	error_logger:info_msg("Established connection",[]),
+
+	Name = ?SERVER,
+	watch_connection(ConPid, 
+		             fun(Name, Pid, Reason) -> 
+   						on_connection_exception(Name, Pid, Reason)
+								  end),
 	{reply, ConPid, 
 		State#consumer_state{connection=ConPid}};
 
