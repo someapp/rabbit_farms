@@ -1,9 +1,7 @@
 -module(password).
 
 -export([encode_password/1,
-%		 encode_password/2,
 		 decode_password/1, 
-%		 decode_password/2,
 		 is_secure/1]).
 
 -spec encode_password(term())-> binary().
