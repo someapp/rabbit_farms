@@ -1,19 +1,3 @@
-%% -------------------------------------------------------------------
-%% Copyright (c) 2013 Xujin Zheng (zhengxujin@adsage.com)
-%%
-%% Licensed under the Apache License, Version 2.0 (the "License");
-%% you may not use this file except in compliance with the License.
-%% You may obtain a copy of the License at
-%%
-%% http://www.apache.org/licenses/LICENSE-2.0
-%%
-%% Unless required by applicable law or agreed to in writing, software
-%% distributed under the License is distributed on an "AS IS" BASIS,
-%% WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-%% See the License for the specific language governing permissions and
-%% limitations under the License.
-%% -------------------------------------------------------------------
-
 -module(rabbit_farm_keeper).
 -behaviour(gen_server2).
 
@@ -108,7 +92,7 @@ terminate(_eason, State) ->
 		 		amqp_connection:close(Connection, 3);
 		 false->
 		 		FarmName = State#rabbit_farm.farm_name,
-				lager:log(error,"the farm ~p: ~p~n",[FarmName, {error, farm_died}])
+		 		error_logger:error_msg("the farm ~p: ~p~n",[FarmName, {error, farm_died}])
 	end,	
 	ok.
 
@@ -159,7 +143,7 @@ on_rabbit_farm_exception(FarmName, FarmPid, RabbitFarmInstance, Reason)->
 	FarmNodeName = ?TO_FARM_NODE_NAME(FarmName),
 	gen_server2:cast(?RABBIT_FARMS,{on_rabbit_farm_die,Reason,RabbitFarmInstance}),
 	gen_server2:cast(FarmNodeName, {on_rabbit_farm_die,Reason,RabbitFarmInstance}),
-	lager:log(error, "farm_pid:~n~p~nrabbit_farm:~n~p~nreason:~n~p~n",[FarmPid,RabbitFarmInstance,Reason]).
+	error_logger:error_msg("farm_pid:~n~p~nrabbit_farm:~n~p~nreason:~n~p~n",[FarmPid,RabbitFarmInstance,Reason]).
 
 watch_rabbit_farm(FarmPid,RabbitFarm,Fun) when   is_pid(FarmPid),
 									 			 is_record(RabbitFarm,rabbit_farm)->

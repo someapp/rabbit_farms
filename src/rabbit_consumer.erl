@@ -239,10 +239,10 @@ init([]) ->
  	process_flag(trap_exit, true),
  	error_logger:info_msg("Initializing rabbit consumer client"),
 
-    {ok, [ConfList]} = load_config(?AMQP_CONF),
+    {ok, [ConfList]} = rabbit_farm_util:load_config(?AMQP_CONF),
     Amqp_ConfList = proplists:get_value(amqp_param, ConfList, []),
     Feeder_ConfList = proplists:get_value(feeders, ConfList, []),
-    {ok, [Rest_ConfList]} = load_config(?REST_CONF),
+    {ok, [Rest_ConfList]} = rabbit_farm_util:load_config(?REST_CONF),
     R = {ok, #consumer_state{
     	connection = undefined,
     	rest_params = get_rest_config(Rest_ConfList),
@@ -268,47 +268,47 @@ handle_call({connect}, _From, State)->
 		State#consumer_state{connection=ConPid}};
 
 handle_call({open_channel}, _From, State)->
-	Start = os_now(),
+	Start = rabbit_farm_util:os_now(),
 	ConPid = State#consumer_state.connection,
 	ChanPid0 = State#consumer_state.channel,
 	error_logger:info_msg("Connected Connection ~p Channel ~p.",[ConPid, ChanPid0]),
     ChanPid =get_channel_pid(State),
- 	End = os_now(),
- 	TSpan = timespan(Start, End),
+ 	End = rabbit_farm_util:os_now(),
+ 	TSpan = rabbit_farm_util:timespan(Start, End),
  	error_logger:info_msg("Connected Channel ~p. Timespan ~p",[ChanPid, TSpan]),
 	{reply, ChanPid, 
 		State#consumer_state{channel=ChanPid}};		
 
 handle_call({close_channel}, _From, State)->
- 	Start = os_now(),
+ 	Start = rabbit_farm_util:os_now(),
  	ChanPid = State#consumer_state.channel,
  	error_logger:info_msg("Channel Pid ~p, is_alive? ~p",
  		[ChanPid, is_alive(ChanPid)]),
  	R = channel_close(ChanPid),
- 	End = os_now(),
- 	TSpan = timespan(Start, End),
+ 	End = rabbit_farm_util:os_now(),
+ 	TSpan = rabbit_farm_util:timespan(Start, End),
  	error_logger:info_msg("Closed Channel: Ret: ~p. Timespan ~p",[R, TSpan]),
 	{reply, closed_channel, 
 		State#consumer_state{channel=undefined}};		
 
 handle_call({reconnect}, _From, State)->
-	Start = os_now(),
+	Start = rabbit_farm_util:os_now(),
 	gen_server:call(?SERVER, {disconnect}),
 	Reply = gen_server:call(?SERVER, {connect}),
-	End = os_now(),
-	TSpan = timespan(Start, End),
+	End = rabbit_farm_util:os_now(),
+	TSpan = rabbit_farm_util:timespan(Start, End),
 	error_logger:info_msg("Reconnect ~p. Timespan: ~p",[Reply, TSpan]),
 
 	{reply, Reply, State};
 
 handle_call({disconnect}, _From, State)->
-	Start = os_now(),
+	Start = rabbit_farm_util:os_now(),
 	error_logger:info_msg("Disconnecting ....",[]),
 	R1 = channel_close(State#consumer_state.channel),
 	error_logger:info_msg("Disconnected Channel ~p",[R1]),
 	R2 = connection_close(State#consumer_state.connection),
-	End = os_now(),
-    TSpan = timespan(Start, End),
+	End = rabbit_farm_util:os_now(),
+    TSpan = rabbit_farm_util:timespan(Start, End),
 	error_logger:info_msg("Disconnected Connection ~p. Timespan: ~p",[R2, TSpan]),
 	{reply, {ok, disconnected}, 
 		State#consumer_state{
@@ -335,7 +335,7 @@ handle_call({register_callback, Module},
 	{reply, ok, State};
 
 handle_call({subscribe}, _From, State)->
-	Start = os_now(),
+	Start = rabbit_farm_util:os_now(),
 	ChanPid =get_channel_pid(State),
 	Queue = State#consumer_state.queue,
 	Exchange = State#consumer_state.exchange,
@@ -346,8 +346,8 @@ handle_call({subscribe}, _From, State)->
 	declare_queue(ChanPid, Queue, Durable, Exclusive, Autodelete),
 	bind_queue(ChanPid, Queue, Exchange, RoutingKey),
  	Reply = do_subscribe(ChanPid, Queue, State#consumer_state.consumer_pid),
-	End = os_now(),
-	TSpan = timespan(Start, End),
+	End = rabbit_farm_util:os_now(),
+	TSpan = rabbit_farm_util:timespan(Start, End),
  	error_logger:info_msg("handle subscribe ok ~p. Timespan: ~p",[Reply, TSpan]),
 	{reply, Reply, State};
 
@@ -407,7 +407,7 @@ handle_info({#'basic.deliver'
 			  },
 			 Content}, State
 			) ->
-	Start = os_now(),
+	Start = rabbit_farm_util:os_now(),
     #amqp_msg{props = Props, payload = Payload} = Content,
     #'P_basic'{
     	content_type = ContentType
@@ -418,8 +418,8 @@ handle_info({#'basic.deliver'
 	
     error_logger:info_msg("Publish ChanPid ~p DTag ~p",[State#consumer_state.channel, DTag]),
 	Ret = ack(State#consumer_state.channel,DTag),
-    End = os_now(),
-    TSpan = timespan(Start, End),
+    End = rabbit_farm_util:os_now(),
+    TSpan = rabbit_farm_util:timespan(Start, End),
     error_logger:info_msg("Publish Delivery Ack ~p. Timespan: ~p",[Ret, TSpan]),
 	{noreply, State};
 
@@ -438,13 +438,13 @@ handle_info({'DOWN', _MRef, process, Pid, normal}, State) ->
 
 handle_info({'DOWN', _MRef, process, Pid, Info}, State) ->
 %    error_logger:error_msg("DOWN Pid ~p, Info ~p",[Pid, Info]),
-	io:format("Process ~p DOWN ~p",[Pid, Info]),
+	io:format("Process ~p DOWN ~p~n",[Pid, Info]),
 	erlang:send_after(?RECON_TIMEOUT, self(), {init}),
     {noreply, State};
 
 handle_info({'EXIT', Pid, Reason}, State)->
 %	error_logger:error_msg("amqp connection ~p down ",[State#consumer_state.connection]),
-	io:format("Process ~p EXIT ~p",[Pid, Reason]),
+	io:format("Process ~p EXIT ~p~n",[Pid, Reason]),
 	erlang:send_after(?RECON_TIMEOUT, self(), {init}),
 	{noreply, State#consumer_state{
 		connection = undefined, 
@@ -533,38 +533,6 @@ get_channel_pid(State)->
     				Pid;
     	R -> R
     end.
-
--spec load_config()-> list().
-load_config()->
-  {ok, ConfDir}= cwd(),
-  load_config(ConfDir, "spark_consumer.config").
-
--spec load_config(string())-> list().
-load_config(File) ->
-  {ok, ConfDir}= cwd(),
-  load_config(ConfDir,File).
-
--spec load_config(string(), string())-> list().
-load_config(ConfDir,File) when is_list(ConfDir), 
-			  is_list(File)->
-  FileFullPath = lists:concat([ConfDir,"/", File]),
-  error_logger:info_msg("Loading config: ~p",[FileFullPath]),
-  {ok, [ConfList]}= file:consult(FileFullPath),
-  {ok, [ConfList]}.
-
--spec cwd()-> {ok, string()}.
-cwd()->
-  {ok, Cwd} = file:get_cwd(),
-  {ok, lists:concat([Cwd,"/",?CONFPATH])}.
-
--spec os_now() -> calendar:datetime1970().
-os_now()->
-  R =os:timestamp(),
-  calendar:now_to_universal_time(R).
-
--spec timespan( calendar:datetime1970(), calendar:datetime1970())-> calendar:datetime1970().
-timespan(A,B)->
-  calendar:time_difference(A,B).
 
 on_connection_exception(Name, Pid, normal)->ok;
 on_connection_exception(Name, Pid, Reason)->

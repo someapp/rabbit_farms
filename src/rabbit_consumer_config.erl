@@ -1,15 +1,9 @@
 -module(rabbit_consumer_config).
 -export([
-%	get_connection_setting/0,
 	get_connection_setting/1,
-%	get_exchange_setting/0,
 	get_exchange_setting/1,
-%	get_queue_setting/0,
 	get_queue_setting/1,
-%	get_queue_bind/0,
 	get_queue_bind/1,
-
- %	get_consumer/0,
 	get_consumer/1
 
 ]).
