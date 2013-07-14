@@ -48,7 +48,7 @@ start_()->
     ok = app_util:start_app(rabbit_common),
     ok = app_util:start_app(amqp_client),
     ok = app_util:start_app(crypto),
-    ok = app_util:start_app(erlang_uuid),
+    ok = app_util:start_app(uuid),
     ok = app_util:start_app(?APP).
 
 start()->
