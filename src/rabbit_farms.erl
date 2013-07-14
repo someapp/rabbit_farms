@@ -137,12 +137,10 @@ handle_call(_Request, _From, State) ->
     Reply = {error, function_clause},
     {reply, Reply, State}.
 
-handle_cast({publish, Message}, State) 
-					when is_record(Message, rabbit_message) ->
+handle_cast({publish, Message}, State) ->
     spawn(fun()-> publish_rabbit_message(cast, Message) end),
     {noreply, State};
-handle_cast({publish, Messages}, State) 
-					when is_record(Messages,rabbit_messages) ->
+handle_cast({publish, Messages}, State) ->
     spawn(fun()-> 
     		 publish_rabbit_messages(cast, Messages)
     	 end),
@@ -265,7 +263,9 @@ delete_rabbit_farm_instance(FarmName, FarmOptions)->
 		 	error_logger:info_msg("Cannot find rabbit farm:~p~n",[FarmName]),
 		 	{warn, farm_not_exist}
 	end.
-
+publish_rabbit_message(Type, <<"Test Message">>)->
+    publish_a_message(Type, Message);
+     
 publish_rabbit_message(Type, #rabbit_message{
 								 farm_name    = FarmName,
 								 exchange     = Exchange,
@@ -274,8 +274,23 @@ publish_rabbit_message(Type, #rabbit_message{
 								 content_type = ContentType
 							}  = Message)
 				when is_record(Message,rabbit_message)->
+    publish_a_message(Type, Message);
+    
+%	F = publish_fun(Type, Exchange, RoutingKey, Message, ContentType),
+%	call_wrapper(FarmName, F).
+
+publish_a_message(Type, #rabbit_message{
+								 farm_name    = FarmName,
+								 exchange     = Exchange,
+								 routing_key  = RoutingKey,
+								 payload      = Message,
+								 content_type = ContentType
+							}  = Message)
+				->
 	F = publish_fun(Type, Exchange, RoutingKey, Message, ContentType),
 	call_wrapper(FarmName, F).
+
+
 
 publish_rabbit_messages(Type, #rabbit_messages{
 								 farm_name            = FarmName,
