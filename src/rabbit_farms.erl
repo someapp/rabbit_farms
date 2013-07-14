@@ -275,7 +275,7 @@ publish_a_message(Type, #rabbit_message{
 	F = publish_fun(Type, Exchange, RoutingKey, Message, ContentType),
 	call_wrapper(FarmName, F).
 
-publish_rabbit_message(Type, <<"Test Message">>)->
+publish_rabbit_message(Type, <<"Test Message">> = Message)->
     publish_a_message(Type, Message);
 
 publish_rabbit_message(Type, #rabbit_message{
@@ -286,10 +286,9 @@ publish_rabbit_message(Type, #rabbit_message{
 								 content_type = ContentType
 							}  = Message)
 				when is_record(Message,rabbit_message)->
-    publish_a_message(Type, Message);
+    publish_a_message(Type, Message).
 
-%	F = publish_fun(Type, Exchange, RoutingKey, Message, ContentType),
-%	call_wrapper(FarmName, F).
+
 publish_rabbit_messages(Type, #rabbit_messages{
 								 farm_name            = FarmName,
 								 exchange             = Exchange,
