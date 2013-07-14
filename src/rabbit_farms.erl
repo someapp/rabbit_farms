@@ -263,21 +263,6 @@ delete_rabbit_farm_instance(FarmName, FarmOptions)->
 		 	error_logger:info_msg("Cannot find rabbit farm:~p~n",[FarmName]),
 		 	{warn, farm_not_exist}
 	end.
-publish_rabbit_message(Type, <<"Test Message">>)->
-    publish_a_message(Type, Message);
-     
-publish_rabbit_message(Type, #rabbit_message{
-								 farm_name    = FarmName,
-								 exchange     = Exchange,
-								 routing_key  = RoutingKey,
-								 payload      = Message,
-								 content_type = ContentType
-							}  = Message)
-				when is_record(Message,rabbit_message)->
-    publish_a_message(Type, Message);
-    
-%	F = publish_fun(Type, Exchange, RoutingKey, Message, ContentType),
-%	call_wrapper(FarmName, F).
 
 publish_a_message(Type, #rabbit_message{
 								 farm_name    = FarmName,
@@ -290,8 +275,21 @@ publish_a_message(Type, #rabbit_message{
 	F = publish_fun(Type, Exchange, RoutingKey, Message, ContentType),
 	call_wrapper(FarmName, F).
 
+publish_rabbit_message(Type, <<"Test Message">>)->
+    publish_a_message(Type, Message);
 
+publish_rabbit_message(Type, #rabbit_message{
+								 farm_name    = FarmName,
+								 exchange     = Exchange,
+								 routing_key  = RoutingKey,
+								 payload      = Message,
+								 content_type = ContentType
+							}  = Message)
+				when is_record(Message,rabbit_message)->
+    publish_a_message(Type, Message);
 
+%	F = publish_fun(Type, Exchange, RoutingKey, Message, ContentType),
+%	call_wrapper(FarmName, F).
 publish_rabbit_messages(Type, #rabbit_messages{
 								 farm_name            = FarmName,
 								 exchange             = Exchange,
