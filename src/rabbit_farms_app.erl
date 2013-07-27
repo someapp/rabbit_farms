@@ -21,13 +21,28 @@
 %% Application callbacks
 -export([start/2, stop/1]).
 
+-export([start/0, stop/0]).
+
+-define(APP, ?MODULE).
+
+
+start()->
+  application:start(?APP, permanent).
+
+stop()->
+  application:stop(?APP).
+
+
 %% ===================================================================
 %% Application callbacks
 %% ===================================================================
 -spec start(atom(), list())-> {ok, pid()} | {error, tuple()}.
-start(_StartType, _StartArgs) ->
-    rabbit_farms_sup:start_link().
+start(StartType, StartArgs) ->
+    error_logger:info_msg("Starting application ~p with Type ~p Args ~p",[?APP, StartType, StartArgs]),	    
+    rabbit_farms_sup:start_link(StartType, StartArgs).
     
 -spec stop(atom()) -> ok.
 stop(_State) ->
     ok.
+
+

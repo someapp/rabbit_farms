@@ -5,7 +5,7 @@
 	get_queue_setting/1,
  	get_routing_key/1,
 	get_queue_bind/3,
-	get_consumer/1
+	get_consumer/1, clone_queue_setting/2
 
 ]).
 
@@ -72,7 +72,21 @@ get_queue_setting(ConfList)->
 			   auto_delete = QAutoDelete,
 			   exclusive   = QExclusive,
 			   nowait      = QNoWait,
-			   arguments = QArguments}.	
+			   arguments = QArguments}.
+
+-spec clone_queue_setting(list(), integer())-> [#'queue.declare'{}].
+clone_queue_setting(ConfList, HowMany) when is_integer(HowMany), HowMany >=0 ->
+   BaseSetting = get_queue_setting(ConfList),   
+   clone_queue(BaseSetting, [BaseSetting], HowMany).
+
+clone_queue(BaseSetting, Queues, 0)-> [];   
+clone_queue(BaseSetting, [H|_], I) ->
+   NewName = index_queue_name(BaseSetting#'queue.declare'.queue, I),
+   NewQueue = BaseSetting#'queue.declare'{queue = NewName},
+   clone_queue(BaseSetting, [H|NewQueue], I-1).
+
+index_queue_name(Name, I) when is_binary(Name) ->
+   <<Name/binary,I/binary>>.	
 
 -spec get_routing_key(list()) -> binary().	
 get_routing_key(ConfList)->
@@ -88,16 +102,17 @@ get_queue_bind(Queue, Exchange, RoutingKey)->
 		}.
 
 -spec get_consumer(list())-> #'basic.consume'{}.
-get_consumer(FeedOpt) ->
-	Consumer_tag = proplists:get_value(consumer_tag, FeedOpt, <<"">>),
-	Queue 		= proplists:get_value(queue, FeedOpt, <<"">>),
-	Ticket 		= proplists:get_value(ticket, FeedOpt, 0),
-	NoLocal		= proplists:get_value(no_local, FeedOpt, false),
-	No_ack		= proplists:get_value(no_ack, FeedOpt, false),
-	Exclusive	= proplists:get_value(exclusive, FeedOpt, false),
-	Nowait      = proplists:get_value(nowait,FeedOpt,false),
-	Arguments 	= proplists:get_value(arguments,FeedOpt,[]),
-	#'basic.consume'{
+get_consumer(ConfList) ->
+   {ok, ConsumerConfList} = app_config_util:config_val(consumer_queue, ConfList, []),	
+   Consumer_tag = proplists:get_value(consumer_queue, ConsumerConfList, <<"">>),
+   Queue = proplists:get_value(queue, ConsumerConfList, <<"">>),
+   Ticket = proplists:get_value(ticket, ConsumerConfList, 0),
+   NoLocal = proplists:get_value(no_local, ConsumerConfList, false),
+   No_ack = proplists:get_value(no_ack, ConsumerConfList, false),
+   Exclusive = proplists:get_value(exclusive, ConsumerConfList, false),
+   Nowait = proplists:get_value(nowait, ConsumerConfList,false),
+   Arguments = proplists:get_value(arguments, ConsumerConfList,[]),
+   #'basic.consume'{
 		ticket = Ticket,
 		queue = Queue,
 		no_local = NoLocal,
@@ -107,6 +122,8 @@ get_consumer(FeedOpt) ->
 		consumer_tag = Consumer_tag,
 		arguments= Arguments
 	}.
+
+
 
 print_queue_bind(Queue,Exchange, RoutingKey) ->
    error_logger:info_msg("Queue ~p",[Queue]),
