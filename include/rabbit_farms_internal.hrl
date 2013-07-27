@@ -25,27 +25,3 @@
 					   callbacks = []
 					   }).
 
--define(TO_FARM_NODE_NAME(V),list_to_atom("farm_" ++ atom_to_list((V)))).
-
--record(consumer_state, {
-		farm_name = [] ::string(),
-%		status = uninitialized  :: initialized | uninitialized,
-		consumer_pid =undefined :: pid(),
-		connection = undefined :: pid(),
-		connection_ref ::reference(),
-		channel = undefined:: pid(),
-		channel_ref =undefined :: reference(),
-		transform_module =undefined :: module(),
-		restart_timeout = 5000 :: pos_integer(), % restart timeout
-		exchange = <<"">>,
-		routing_key = <<"">>,
-		queue = <<"">>,
-		durable = false,
-		exclusive = false,
-		auto_delete = false,
-		amqp_params = #amqp_params_network{} ::#amqp_params_network{},
-
-		rest_params = #spark_restc_config{} ::#spark_restc_config{}
-
-%		retry_strategy = undefined ::atom()
-}).
