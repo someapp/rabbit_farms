@@ -107,8 +107,7 @@ handle_call({stop, Reason}, From, State)->
  	error_logger:info_msg("Rabbit Farm Handle stop Reason ~p ",[Reason]),
 	Reply = terminate(Reason, State),
 	{reply, Reply, State};
-handle_call({publish, Message}, From, State)
-					when is_record(Message, rabbit_message) ->
+handle_call({publish, Message}, From, State) ->
 	spawn(fun()-> 
 				Reply = publish_rabbit_message(call, Message),
 				gen_server2:reply(From, Reply)
@@ -270,7 +269,7 @@ publish_a_message(Type, #rabbit_message{
 								 routing_key  = RoutingKey,
 								 payload      = Message,
 								 content_type = ContentType
-							}  = Message)
+							}  = CMessage)
 				->
 	F = publish_fun(Type, Exchange, RoutingKey, Message, ContentType),
 	call_wrapper(FarmName, F).
