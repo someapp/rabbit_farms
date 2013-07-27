@@ -36,27 +36,32 @@
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, handle_info/3,
         terminate/2, code_change/3]).
 
--spec start_() -> ok.
-start_()->
-	
-    ok = app_util:start_app(syntax_tools),
-    ok = app_util:start_app(compiler),
-    ok = app_util:start_app(goldrush),
-    ok = lager:start(),
-    ok = app_util:start_app(gen_server),
-    ok = app_util:start_app(rabbit_common),
-    ok = app_util:start_app(amqp_client),
-    ok = app_util:start_app(crypto),
-    ok = app_util:start_app(restc),
-    ok = app_util:start_app(?APP).
 
 -spec start() -> ok.
 start()->
-	
-    ok = app_util:start_app(?APP).
+    ensure_dependency_started().
+
 -spec stop() -> ok.
 stop()->
  	gen_server:call(?SERVER,{stop, normal}).
+
+ensure_dependency_started()->
+  ?INFO_MSG("[~p] Starting depedenecies", [?SERVER]),
+  Apps = [syntax_tools, 
+	  compiler, 
+	  crypto,
+	  public_key,
+	  gen_server2,
+	  ssl, 
+	  goldrush, 
+	  rabbit_common,
+	  amqp_client,
+	  inets, 
+	  restc],
+  ?INFO_MSG("[~p] Going to start apps ~p", [Proc, lists:flatten(Apps)]),
+  app_util:start_apps(Apps),
+  %ok = lager:start(),
+  ?INFO_MSG("[~p] Started depedenecies ~p", [Proc, lists:flatten(Apps)]).
 
 -spec start_link() -> pid().
 start_link() ->
@@ -236,8 +241,8 @@ confirm_select(Channel) ->
 %%%===================================================================
 
 init([]) ->
- 	process_flag(trap_exit, true),
- 	error_logger:info_msg("Initializing rabbit consumer client"),
+    process_flag(trap_exit, true),
+    error_logger:info_msg("Initializing rabbit consumer client"),
 
     {ok, [ConfList]} = rabbit_farm_util:load_config(?AMQP_CONF),
     Amqp_ConfList = proplists:get_value(amqp_param, ConfList, []),

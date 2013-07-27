@@ -20,7 +20,7 @@
 start_link() ->
     supervisor:start_link({local, ?MODULE}, ?MODULE, []).
 
--spec start_link(RabbitFarmModel::#consumer_state{})-> {ok, pid()} | {error, term()}.
+-spec start_link(tuple())-> {ok, pid()} | {error, term()}.
 start_link(RabbitFarmModel) ->
     supervisor:start_link({local, ?MODULE}, ?MODULE, [RabbitFarmModel]).
 
